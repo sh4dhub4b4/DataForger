@@ -4,39 +4,39 @@
     "url": "https://www.bdstall.com/ssd/"
   },
   "container": {
-    "selector": "a:has(.product-cat-box-grid)",
+    "selector": "div.product-grid, div.cat-main div.col-md-3, a:has(.product-cat-box-grid)",
     "type": "css"
   },
   "pagination": {
     "type": "next_button",
-    "selector": "span.page-next-link a",
+    "selector": "span.page-next-link a, ul.pagination li.active + li a",
     "limit": 5
   },
   "fields": [
     {
       "name": "Title",
-      "selector": "div.product-cat-box-grid-item-type",
+      "selector": "a[href*='/details/'], div.product-cat-box-grid-item-type",
       "attr": "text",
       "filter": "custom",
       "formula": "trim | replace('|','') | normalize"
     },
     {
       "name": "Link",
-      "selector": "",
+      "selector": "a[href*='/details/']",
       "attr": "href",
       "filter": "none",
       "formula": ""
     },
     {
       "name": "Image",
-      "selector": "div.ibox img",
+      "selector": "img[src*='cdn.bdstall.com'], div.ibox img, img",
       "attr": "src",
       "filter": "none",
       "formula": ""
     },
     {
       "name": "Price",
-      "selector": "div.product-cat-box-grid-price",
+      "selector": "b, span.price, div.product-cat-box-grid-price",
       "attr": "text",
       "filter": "number",
       "formula": ""
@@ -48,9 +48,5 @@
       "filter": "custom",
       "formula": "replace('In Stock', '1') | if_num('In Stock', 'Out Of Stock')"
     }
-  ],
-  "output": {
-    "filename": "BDstall-SSD",
-    "format": "csv"
-  }
+  ]
 }

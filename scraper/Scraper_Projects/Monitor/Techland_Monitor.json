@@ -15,28 +15,28 @@
   "fields": [
     {
       "name": "Title",
-      "selector": "h2.v2-card-title",
+      "selector": "a.product-title, h4.title a, h2.v2-card-title",
       "attr": "text",
       "filter": "none",
       "formula": ""
     },
     {
       "name": "Link",
-      "selector": "a.block",
+      "selector": "a.product-title, h4.title a, a.block",
       "attr": "href",
       "filter": "none",
       "formula": ""
     },
     {
       "name": "Image",
-      "selector": "img",
+      "selector": "img.img-responsive, img",
       "attr": "src",
       "filter": "none",
       "formula": ""
     },
     {
       "name": "Price",
-      "selector": "div.text-red-600",
+      "selector": "div.price_box, span.price-new, div.text-red-600",
       "attr": "text",
       "filter": "number",
       "formula": ""

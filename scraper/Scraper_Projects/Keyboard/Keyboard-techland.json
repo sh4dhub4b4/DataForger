@@ -4,7 +4,7 @@
     "url": "https://www.techlandbd.com/accessories/computer-keyboard"
   },
   "container": {
-    "selector": "article.products-list__item",
+    "selector": "div.products-list__item, article.products-list__item",
     "type": "css"
   },
   "pagination": {
@@ -15,28 +15,28 @@
   "fields": [
     {
       "name": "Title",
-      "selector": "h4 a",
+      "selector": "a.product-title, h4 a, h2 a",
       "attr": "text",
       "filter": "none",
       "formula": ""
     },
     {
       "name": "Link",
-      "selector": "h4 a",
+      "selector": "a.product-title, h4 a, h2 a",
       "attr": "href",
       "filter": "none",
       "formula": ""
     },
     {
       "name": "Image",
-      "selector": "img",
+      "selector": "img.img-responsive, img",
       "attr": "src",
       "filter": "none",
       "formula": ""
     },
     {
       "name": "Price",
-      "selector": "span.text-base",
+      "selector": "div.price_box, span.price-new, span.text-base",
       "attr": "text",
       "filter": "number",
       "formula": ""

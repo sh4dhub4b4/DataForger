@@ -4,49 +4,49 @@
     "url": "https://www.techlandbd.com/smartphone-and-tablet/smartphone"
   },
   "container": {
-    "selector": "article.products-list__item",
+    "selector": "div.products-list__item, article.products-list__item",
     "type": "css"
   },
   "pagination": {
     "type": "page_loop",
-    "selector": "",
+    "selector": "page",
     "limit": 5
   },
   "fields": [
     {
       "name": "Title",
-      "selector": "h4 a",
+      "selector": "a.product-title, h4 a, h2.v2-card-title",
       "attr": "text",
       "filter": "none",
       "formula": ""
     },
     {
       "name": "Link",
-      "selector": "h4 a",
+      "selector": "a.product-title, h4 a, a.block",
       "attr": "href",
       "filter": "none",
       "formula": ""
     },
     {
       "name": "Image",
-      "selector": "img",
+      "selector": "img.img-responsive, img",
       "attr": "src",
       "filter": "none",
       "formula": ""
     },
     {
       "name": "Price",
-      "selector": "span.text-base",
+      "selector": "div.price_box, span.text-base, span.price-new, div.text-red-600",
       "attr": "text",
       "filter": "number",
       "formula": ""
     },
     {
       "name": "Status",
-      "selector": "div.text-right p",
+      "selector": "div.bengali-text, div.text-right p",
       "attr": "text",
-      "filter": "none",
-      "formula": ""
+      "filter": "custom",
+      "formula": "trim | if_num('In Stock','In Stock')"
     }
   ],
   "output": {
