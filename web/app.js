@@ -679,15 +679,17 @@ function renderSingleCard(p) {
       <!-- Card Main Body -->
       <div class="p-4 flex flex-col sm:flex-row gap-4 items-start">
         
-        <!-- Lazy Loaded Image Thumbnail -->
-        <div class="h-24 w-24 sm:h-28 sm:w-28 bg-dark-950 rounded-lg border border-dark-700 flex-shrink-0 flex items-center justify-center p-2 overflow-hidden group">
+        <!-- Lazy Loaded Image Thumbnail with Direct Fallback & Cross-Origin Support -->
+        <div class="h-24 w-24 sm:h-28 sm:w-28 bg-dark-950 rounded-lg border border-dark-700 flex-shrink-0 flex items-center justify-center p-2 overflow-hidden group relative">
           <img
             src="${safeImageUrl}"
             alt="${escapeHtml(p.title)}"
             loading="lazy"
             decoding="async"
+            referrerpolicy="no-referrer"
+            crossorigin="anonymous"
             class="max-h-full max-w-full object-contain group-hover:scale-105 transition duration-200"
-            onerror="this.src='https://via.placeholder.com/120?text=No+Preview'"
+            onerror="if(this.src !== 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=240&auto=format&fit=crop&q=60'){ this.src='https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=240&auto=format&fit=crop&q=60'; }"
           />
         </div>
 
@@ -1658,114 +1660,6 @@ async function openUserProfileModal(username) {
 
 function closeUserProfileModal() {
   document.getElementById("profile-modal").classList.add("hidden");
-}
-
-// ==========================================
-// RAG (Retrieval-Augmented Generation) COPILOT
-// ==========================================
-function toggleRagDrawer() {
-  const drawer = document.getElementById("rag-drawer");
-  drawer.classList.toggle("translate-x-full");
-  if (!drawer.classList.contains("translate-x-full")) {
-    document.getElementById("rag-input").focus();
-  }
-}
-
-function askRagSample(query) {
-  document.getElementById("rag-input").value = query;
-  executeRagQuery();
-}
-
-async function executeRagQuery() {
-  const input = document.getElementById("rag-input");
-  const query = input.value.trim();
-  if (!query) return;
-
-  const messagesContainer = document.getElementById("rag-messages");
-
-  messagesContainer.innerHTML += `
-    <div class="flex justify-end">
-      <div class="p-2.5 bg-cyan-950/80 border border-cyan-800 text-cyan-200 rounded-lg max-w-[85%] text-xs font-mono">
-        ${escapeHtml(query)}
-      </div>
-    </div>
-  `;
-
-  input.value = "";
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-  const loadingId = "rag-loading-" + Date.now();
-  messagesContainer.innerHTML += `
-    <div id="${loadingId}" class="p-3 bg-dark-900 border border-dark-700 rounded-lg text-slate-400 space-y-1 text-xs">
-      <div class="flex items-center space-x-2 text-cyan-400">
-        <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
-        <span>Retrieving live facts from Supabase database...</span>
-      </div>
-    </div>
-  `;
-  lucide.createIcons();
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-  // 1. RETRIEVE RELEVANT HARDWARE & REVIEWS (RAG RETRIEVER)
-  const tokens = query.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
-  let matchedItems = allProducts.filter((p) => {
-    return tokens.some((token) => p.title.toLowerCase().includes(token) || p.category.toLowerCase().includes(token));
-  });
-
-  if (matchedItems.length === 0) {
-    matchedItems = allProducts.slice(0, 5);
-  } else {
-    matchedItems = matchedItems.slice(0, 4);
-  }
-
-  const matchedIds = matchedItems.map((m) => m.id);
-  const { data: matchedReviews } = await sb.from("comments").select("*").in("product_id", matchedIds).limit(4);
-
-  // 2. CONTEXT AUGMENTATION & ANSWER SYNTHESIS (RAG GENERATOR)
-  let answerHtml = `<div class="space-y-2 text-xs font-mono text-slate-200">`;
-  answerHtml += `<p class="text-slate-300">Based on live crawled listings across Bangladeshi retailers:</p>`;
-
-  matchedItems.forEach((item) => {
-    const affiliateUrl = buildAffiliateUrl(item.product_url, item.vendor_name);
-    answerHtml += `
-      <div class="p-2.5 bg-dark-950 border border-dark-700 rounded-lg space-y-1">
-        <div class="font-bold text-white flex items-center justify-between">
-          <span class="truncate">${escapeHtml(item.title)}</span>
-          <span class="text-emerald-400 ml-2 flex-shrink-0">৳ ${Number(item.current_price).toLocaleString()}</span>
-        </div>
-        <div class="text-[11px] text-slate-400 flex items-center justify-between">
-          <span>Store: <strong>${escapeHtml(item.vendor_name)}</strong> (${escapeHtml(item.stock_status)})</span>
-          <a href="${affiliateUrl}" target="_blank" rel="noopener noreferrer nofollow sponsored" class="text-cyan-400 hover:underline">View Store →</a>
-        </div>
-      </div>
-    `;
-  });
-
-  if (matchedReviews && matchedReviews.length > 0) {
-    answerHtml += `<div class="pt-1 text-[11px] text-slate-400 font-bold">Community Verdicts in BD:</div>`;
-    matchedReviews.forEach((r) => {
-      answerHtml += `
-        <div class="text-[11px] text-slate-400 italic bg-dark-950/60 p-1.5 rounded border border-dark-800">
-          "${escapeHtml(r.comment_text)}" — <span class="text-slate-300">@${escapeHtml(r.user_name || 'Buyer')} (Rating: ${r.rating}/5)</span>
-        </div>
-      `;
-    });
-  }
-
-  answerHtml += `</div>`;
-
-  const loadingEl = document.getElementById(loadingId);
-  if (loadingEl) {
-    loadingEl.innerHTML = `
-      <div class="text-cyan-400 font-bold flex items-center gap-1.5 pb-1 border-b border-dark-700">
-        <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>
-        <span>Grounded Answer (${matchedItems.length} Sources Verified)</span>
-      </div>
-      ${answerHtml}
-    `;
-    lucide.createIcons();
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }
 }
 
 // ==========================================

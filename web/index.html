@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https:; img-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https:; img-src 'self' https: http: data: blob:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none';">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
-  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="referrer" content="no-referrer">
   <title>TechPulse BD — Centralized Hardware Intelligence & Community Radar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -214,18 +214,11 @@
         </div>
       </div>
 
-      <!-- Top Right: RAG Copilot + Social User Profile -->
+      <!-- Top Right: Social User Profile -->
       <div class="flex items-center space-x-2.5 text-xs font-mono">
-        <!-- RAG AI Hardware Copilot Button -->
-        <button onclick="toggleRagDrawer()" class="px-3 py-1.5 rounded-lg bg-cyan-950/80 hover:bg-cyan-900/90 text-cyan-300 font-semibold border border-cyan-700/80 transition flex items-center space-x-1.5 shadow-sm">
-          <i data-lucide="bot" class="w-3.5 h-3.5 text-cyan-400"></i>
-          <span class="hidden sm:inline">Hardware Copilot</span>
-          <span class="text-[9px] px-1 py-0.2 rounded bg-cyan-800/80 text-white font-bold">RAG</span>
-        </button>
-
         <!-- Social User Auth Pill / Button -->
         <div id="user-auth-section">
-          <button onclick="openAuthModal()" class="px-3 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 text-white font-medium border border-dark-700 transition flex items-center space-x-1.5">
+          <button onclick="openAuthModal()" class="px-3.5 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 text-white font-medium border border-dark-700 transition flex items-center space-x-1.5 shadow-sm">
             <i data-lucide="user-plus" class="w-3.5 h-3.5 text-emerald-400"></i>
             <span>Sign In</span>
           </button>
@@ -649,58 +642,6 @@
       <div id="comparison-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
         <!-- Rendered dynamically -->
       </div>
-    </div>
-  </div>
-
-  <!-- RAG AI HARDWARE COPILOT DRAWER (SLIDE-OVER) -->
-  <div id="rag-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-dark-950 border-l border-dark-700 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
-    <div class="p-4 border-b border-dark-700 flex items-center justify-between bg-dark-900">
-      <div class="flex items-center space-x-2">
-        <div class="h-8 w-8 rounded-lg bg-cyan-950 text-cyan-400 border border-cyan-800 flex items-center justify-center">
-          <i data-lucide="bot" class="w-4 h-4"></i>
-        </div>
-        <div>
-          <div class="text-xs font-bold text-white font-mono">TechPulse Copilot (RAG)</div>
-          <div class="text-[10px] text-slate-400 font-mono">Grounded on Live Bangladeshi Store Crawls</div>
-        </div>
-      </div>
-      <button onclick="toggleRagDrawer()" class="text-slate-400 hover:text-white font-mono text-xs px-2 py-0.5 rounded border border-dark-700 bg-dark-800">[Close]</button>
-    </div>
-
-    <!-- RAG Chat Messages History -->
-    <div id="rag-messages" class="flex-1 p-4 overflow-y-auto custom-scrollbar space-y-3 text-xs font-mono">
-      <div class="p-3 bg-dark-900 border border-dark-700 rounded-lg text-slate-300 space-y-1">
-        <div class="text-cyan-400 font-bold flex items-center gap-1">
-          <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-          <span>Welcome to Hardware RAG!</span>
-        </div>
-        <p class="text-[11px] text-slate-400 leading-relaxed">
-          Ask me any purchasing question. I will retrieve live prices across Star Tech, Tech Land, and real community feedback before answering.
-        </p>
-        <div class="pt-2 text-[10px] text-slate-500">
-          Try asking:
-          <button onclick="askRagSample('Cheapest 27 inch 144Hz monitor in stock in BD')" class="block text-emerald-400 hover:underline text-left mt-1">
-            → "Cheapest 27 inch 144Hz monitor in stock in BD"
-          </button>
-          <button onclick="askRagSample('Compare Samsung 980 Pro vs other SSDs in Star Tech')" class="block text-emerald-400 hover:underline text-left mt-1">
-            → "Compare Samsung 980 Pro vs other SSDs in Star Tech"
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- RAG Input Box -->
-    <div class="p-3 border-t border-dark-700 bg-dark-900 flex gap-2">
-      <input
-        id="rag-input"
-        type="text"
-        placeholder="Ask RAG Copilot..."
-        class="flex-1 bg-dark-950 border border-dark-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-cyan-500"
-        onkeydown="if(event.key==='Enter') executeRagQuery()"
-      />
-      <button onclick="executeRagQuery()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-mono font-bold transition">
-        Ask
-      </button>
     </div>
   </div>
 

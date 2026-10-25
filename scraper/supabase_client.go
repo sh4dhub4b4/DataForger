@@ -43,7 +43,7 @@ func NewSupabaseClient() *SupabaseClient {
 	}
 	key := os.Getenv("SUPABASE_SERVICE_ROLE_KEY")
 	if key == "" {
-		key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1endpenh5c29xY3B1Y3BsbGt1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjkxODAxMiwiZXhwIjoyMTA4NDk0MDEyfQ.MVQYjahpozaqKLuZECQFbwDDJqubyb-s9N46W9kSHzc"
+		log.Println("WARNING: SUPABASE_SERVICE_ROLE_KEY environment variable is not set")
 	}
 
 	return &SupabaseClient{

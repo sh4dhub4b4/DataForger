@@ -44,7 +44,7 @@ jobs:
         working-directory: ./scraper
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://fuzwizxysoqcpucpllku.supabase.co' }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1endpenh5c29xY3B1Y3BsbGt1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjkxODAxMiwiZXhwIjoyMTA4NDk0MDEyfQ.MVQYjahpozaqKLuZECQFbwDDJqubyb-s9N46W9kSHzc' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           CATEGORY="${{ github.event.inputs.category || 'SSD' }}"
           PAGES="${{ github.event.inputs.max_pages || '2' }}"

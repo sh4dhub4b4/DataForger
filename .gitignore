@@ -15,3 +15,10 @@ node_modules/
 Thumbs.db
 .vscode/
 .idea/
+
+# Binaries & Large Archives
+*.zip
+*.tar.gz
+
+# Supabase Local Cache
+supabase/.temp/

@@ -4,8 +4,12 @@
 const fs = require("fs");
 const path = require("path");
 
-const SUPABASE_URL = "https://fuzwizxysoqcpucpllku.supabase.co";
-const SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1endpenh5c29xY3B1Y3BsbGt1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjkxODAxMiwiZXhwIjoyMTA4NDk0MDEyfQ.MVQYjahpozaqKLuZECQFbwDDJqubyb-s9N46W9kSHzc";
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://fuzwizxysoqcpucpllku.supabase.co";
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SERVICE_KEY) {
+  console.error("FATAL: SUPABASE_SERVICE_ROLE_KEY environment variable is required.");
+  process.exit(1);
+}
 
 const CSV_MAPPINGS = [
   // Keyboards
