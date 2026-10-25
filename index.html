@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https:; img-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none';">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>TechPulse BD — Centralized Hardware Intelligence & Community Radar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -92,9 +95,15 @@
   <header class="border-b border-dark-700 bg-dark-950/95 sticky top-0 z-40 backdrop-blur">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-15 flex items-center justify-between gap-4 py-2">
       
-      <!-- Brand & BD Location Flag -->
-      <div class="flex items-center space-x-3 flex-shrink-0">
-        <a href="/" class="flex items-center space-x-2.5 group">
+      <!-- Brand & Direct Navigation Tabs -->
+      <div class="flex items-center space-x-3.5 flex-shrink-0">
+        <!-- Brand Logo (Safe Link - Resets to Hardware Feed & Top) -->
+        <a
+          href="javascript:void(0)"
+          onclick="switchMainFeedMode('HARDWARE'); window.scrollTo({top:0, behavior:'smooth'});"
+          class="flex items-center space-x-2.5 group cursor-pointer"
+          title="TechPulse BD — Hardware Radar Home"
+        >
           <div class="h-9 w-9 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 p-0.5 flex items-center justify-center shadow-lg shadow-cyan-950">
             <div class="h-full w-full bg-dark-950 rounded-[7px] flex items-center justify-center font-mono font-black text-cyan-400 text-sm">
               TP
@@ -105,9 +114,32 @@
               <span class="text-base font-extrabold tracking-tight text-white group-hover:text-cyan-400 transition">TechPulse BD</span>
               <span class="text-[9px] font-mono px-1 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-800 font-bold">RADAR v2.5</span>
             </div>
-            <span class="text-[10px] font-mono text-slate-400">Centralized PC Price Intelligence & Forum</span>
+            <span class="text-[10px] font-mono text-slate-400">Bangladesh PC Price Intelligence</span>
           </div>
         </a>
+
+        <!-- Header Nav Mode Switcher (Directly beside logo) -->
+        <nav class="flex items-center space-x-1 bg-dark-900 border border-dark-700/80 p-0.5 rounded-lg text-xs font-mono">
+          <button
+            id="header-nav-hardware"
+            onclick="switchMainFeedMode('HARDWARE')"
+            class="px-2.5 py-1 rounded-md font-bold flex items-center space-x-1.5 transition text-white bg-dark-800 shadow-sm border border-dark-600 cursor-pointer"
+            title="Browse Live Hardware & Price History"
+          >
+            <i data-lucide="cpu" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span class="hidden md:inline">Hardware</span>
+          </button>
+          <button
+            id="header-nav-community"
+            onclick="switchMainFeedMode('COMMUNITY')"
+            class="px-2.5 py-1 rounded-md font-semibold flex items-center space-x-1.5 transition text-slate-400 hover:text-white hover:bg-dark-850 cursor-pointer"
+            title="View BD Community Discussions & Deal Alerts"
+          >
+            <i data-lucide="messages-square" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span class="hidden md:inline">Community</span>
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          </button>
+        </nav>
       </div>
 
       <!-- Real-time Hardware Search Input -->
