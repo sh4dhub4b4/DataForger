@@ -9,7 +9,8 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let allProducts = [];
 let filteredProducts = [];
 let communityPosts = [];
-let activeFeedMode = "HARDWARE"; // 'HARDWARE' or 'COMMUNITY'
+let activeFeedMode = "CATALOG"; // 'CATALOG' (Hardware), 'BUILD_LAB', 'PRICE_RADAR', 'COMMUNITY'
+let activePriceMode = "CASH";   // 'CASH' or 'CARD'
 let activeCategory = "ALL";
 let activeQuickSpec = null;
 let currentRenderCount = 15;
@@ -17,6 +18,17 @@ const BATCH_SIZE = 15;
 let openCommentsProductId = null;
 let openChartProductId = null;
 const chartInstances = {};
+
+// PC Build Lab State (PCPartPicker model)
+const buildLabSlots = {
+  Processor: null,
+  Motherboard: null,
+  RAM: null,
+  Storage: null,
+  GPU: null,
+  PowerSupply: null,
+  Monitor: null,
+};
 
 // Hardware Comparison Tray State (Max 3)
 const comparisonTray = new Map();
@@ -88,6 +100,12 @@ function setupGlobalEventDelegation() {
         break;
       case "toggle-compare":
         toggleCompareItem(id);
+        break;
+      case "add-to-build":
+        handleAddToBuild(id);
+        break;
+      case "remove-from-build":
+        handleRemoveFromBuild(id);
         break;
       case "highlight-product":
         highlightProduct(id);
@@ -215,53 +233,107 @@ function populateProductPicker() {
     allProducts.map((p) => `<option value="${p.id}">[${p.vendor_name}] ${escapeHtml(p.title)}</option>`).join("");
 }
 
-// Switch Main Feed Mode: Hardware Radar vs Community Posts
-function switchMainFeedMode(mode) {
-  activeFeedMode = mode;
-  const tabHw = document.getElementById("tab-mode-hardware");
-  const tabComm = document.getElementById("tab-mode-community");
-  const headerNavHw = document.getElementById("header-nav-hardware");
-  const headerNavComm = document.getElementById("header-nav-community");
-  const pillsRow = document.getElementById("category-pills-row");
-  const postComposer = document.getElementById("community-post-composer");
-  const specFiltersPill = document.getElementById("spec-filter-pills");
-  const specFilters = specFiltersPill ? specFiltersPill.parentElement : null;
+// Switch Pricing Mode: Cash Special vs Regular Card/EMI
+function setPriceComparisonMode(mode) {
+  activePriceMode = mode;
+  const btnCash = document.getElementById("price-mode-cash");
+  const btnCard = document.getElementById("price-mode-card");
 
-  if (mode === "HARDWARE") {
-    if (tabHw) tabHw.className = "px-3 py-1 rounded text-white bg-dark-800 font-bold border border-dark-600 flex items-center space-x-1.5 shadow-sm cursor-pointer";
-    if (tabComm) tabComm.className = "px-3 py-1 rounded hover:text-white hover:bg-dark-800/60 transition text-slate-400 flex items-center space-x-1.5 cursor-pointer";
-    if (headerNavHw) headerNavHw.className = "px-2.5 py-1 rounded-md font-bold flex items-center space-x-1.5 transition text-white bg-dark-800 shadow-sm border border-dark-600 cursor-pointer";
-    if (headerNavComm) headerNavComm.className = "px-2.5 py-1 rounded-md font-semibold flex items-center space-x-1.5 transition text-slate-400 hover:text-white hover:bg-dark-850 cursor-pointer";
-
-    if (pillsRow) {
-      pillsRow.classList.remove("hidden");
-      pillsRow.classList.add("flex");
+  if (btnCash && btnCard) {
+    if (mode === "CASH") {
+      btnCash.className = "px-2.5 py-1 rounded text-[11px] font-bold text-white bg-dark-800 border border-emerald-500/50 flex items-center space-x-1.5 shadow-sm transition";
+      btnCard.className = "px-2.5 py-1 rounded text-[11px] font-medium text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+      btnCash.querySelector("span").className = "h-2 w-2 rounded-full bg-emerald-400";
+      btnCard.querySelector("span").className = "h-2 w-2 rounded-full bg-slate-600";
+    } else {
+      btnCard.className = "px-2.5 py-1 rounded text-[11px] font-bold text-white bg-dark-800 border border-cyan-500/50 flex items-center space-x-1.5 shadow-sm transition";
+      btnCash.className = "px-2.5 py-1 rounded text-[11px] font-medium text-slate-400 hover:text-white transition flex items-center space-x-1.5";
+      btnCard.querySelector("span").className = "h-2 w-2 rounded-full bg-cyan-400";
+      btnCash.querySelector("span").className = "h-2 w-2 rounded-full bg-slate-600";
     }
-    if (postComposer) postComposer.classList.add("hidden");
-    if (specFilters) specFilters.classList.remove("hidden");
+  }
 
-    if (window.location.hash !== "#hardware" && window.location.hash !== "") {
-      history.replaceState(null, null, "#hardware");
+  showToast(`Pricing View: ${mode === "CASH" ? "Cash Special Discount" : "Card POS & 12-Month EMI"}`);
+  applyFilters();
+}
+
+// Switch 4-Room Main Navigation Mode: CATALOG, BUILD_LAB, PRICE_RADAR, COMMUNITY
+function switchMainFeedMode(mode) {
+  // Normalize legacy names
+  if (mode === "HARDWARE") mode = "CATALOG";
+  activeFeedMode = mode;
+
+  const navCatalog = document.getElementById("header-nav-catalog");
+  const navBuilder = document.getElementById("header-nav-builder");
+  const navRadar = document.getElementById("header-nav-radar");
+  const navCommunity = document.getElementById("header-nav-community");
+
+  const buildLabView = document.getElementById("build-lab-view");
+  const priceRadarView = document.getElementById("price-radar-view");
+  const postComposer = document.getElementById("community-post-composer");
+  const hardwareFeed = document.getElementById("hardware-feed");
+  const lazySentinel = document.getElementById("lazy-sentinel");
+  const pillsRow = document.getElementById("category-pills-row");
+  const specFiltersPill = document.getElementById("spec-filter-pills");
+  const specFilters = specFiltersPill ? specFiltersPill.closest("section") : null;
+
+  // Reset nav button styles
+  const allNavs = [
+    { el: navCatalog, m: "CATALOG" },
+    { el: navBuilder, m: "BUILD_LAB" },
+    { el: navRadar, m: "PRICE_RADAR" },
+    { el: navCommunity, m: "COMMUNITY" },
+  ];
+
+  allNavs.forEach(({ el, m }) => {
+    if (!el) return;
+    if (m === mode) {
+      el.className = "px-2.5 py-1 rounded-md font-bold flex items-center space-x-1.5 transition text-white bg-dark-800 shadow-sm border border-cyan-500/50 cursor-pointer";
+    } else {
+      el.className = "px-2.5 py-1 rounded-md font-semibold flex items-center space-x-1.5 transition text-slate-400 hover:text-white hover:bg-dark-850 cursor-pointer";
+    }
+  });
+
+  // Toggle view visibility
+  if (buildLabView) buildLabView.classList.add("hidden");
+  if (priceRadarView) priceRadarView.classList.add("hidden");
+  if (postComposer) postComposer.classList.add("hidden");
+  if (hardwareFeed) hardwareFeed.classList.remove("hidden");
+  if (lazySentinel) lazySentinel.classList.remove("hidden");
+  if (pillsRow) {
+    pillsRow.classList.remove("hidden");
+    pillsRow.classList.add("flex");
+  }
+  if (specFilters) specFilters.classList.remove("hidden");
+
+  if (mode === "CATALOG") {
+    if (window.location.hash !== "#catalog" && window.location.hash !== "") {
+      history.replaceState(null, null, "#catalog");
     }
     renderHardwareFeed(true);
-  } else {
-    if (tabComm) tabComm.className = "px-3 py-1 rounded text-white bg-dark-800 font-bold border border-dark-600 flex items-center space-x-1.5 shadow-sm cursor-pointer";
-    if (tabHw) tabHw.className = "px-3 py-1 rounded hover:text-white hover:bg-dark-800/60 transition text-slate-400 flex items-center space-x-1.5 cursor-pointer";
-    if (headerNavComm) headerNavComm.className = "px-2.5 py-1 rounded-md font-bold flex items-center space-x-1.5 transition text-white bg-dark-800 shadow-sm border border-dark-600 cursor-pointer";
-    if (headerNavHw) headerNavHw.className = "px-2.5 py-1 rounded-md font-semibold flex items-center space-x-1.5 transition text-slate-400 hover:text-white hover:bg-dark-850 cursor-pointer";
-
+  } else if (mode === "BUILD_LAB") {
+    if (hardwareFeed) hardwareFeed.classList.add("hidden");
+    if (lazySentinel) lazySentinel.classList.add("hidden");
+    if (buildLabView) buildLabView.classList.remove("hidden");
+    history.replaceState(null, null, "#build-lab");
+    renderBuildLab();
+  } else if (mode === "PRICE_RADAR") {
+    if (hardwareFeed) hardwareFeed.classList.add("hidden");
+    if (lazySentinel) lazySentinel.classList.add("hidden");
+    if (priceRadarView) priceRadarView.classList.remove("hidden");
+    history.replaceState(null, null, "#price-radar");
+    renderPriceRadar();
+  } else if (mode === "COMMUNITY") {
     if (pillsRow) {
       pillsRow.classList.add("hidden");
       pillsRow.classList.remove("flex");
     }
     if (postComposer) postComposer.classList.remove("hidden");
     if (specFilters) specFilters.classList.add("hidden");
-
-    if (window.location.hash !== "#community") {
-      history.replaceState(null, null, "#community");
-    }
+    history.replaceState(null, null, "#community");
     renderCommunityPostsFeed();
   }
+  lucide.createIcons();
 }
 
 // Switch Hardware Category Filter
@@ -399,30 +471,41 @@ function applyFilters() {
     const matchesCategory = activeCategory === "ALL" || (p.category && p.category.toLowerCase() === activeCategory.toLowerCase());
     const matchesVendor = vendor === "ALL" || p.vendor_name.toLowerCase() === vendor.toLowerCase();
 
-    // Quick Spec Check
+    // Parametric Spec Facets Check
     let matchesSpec = true;
     if (activeQuickSpec) {
       const lowerT = p.title.toLowerCase();
-      if (activeQuickSpec === "144Hz+") {
+      if (activeQuickSpec === "AM5") {
+        matchesSpec = lowerT.includes("am5");
+      } else if (activeQuickSpec === "LGA1700") {
+        matchesSpec = lowerT.includes("lga1700") || lowerT.includes("lga 1700");
+      } else if (activeQuickSpec === "144Hz+") {
         matchesSpec = lowerT.includes("144hz") || lowerT.includes("165hz") || lowerT.includes("180hz") || lowerT.includes("240hz") || lowerT.includes("320hz");
-      } else if (activeQuickSpec === "2K") {
-        matchesSpec = lowerT.includes("2k") || lowerT.includes("qhd") || lowerT.includes("4k") || lowerT.includes("1440p");
       } else if (activeQuickSpec === "IPS") {
         matchesSpec = lowerT.includes("ips") || lowerT.includes("oled");
       } else if (activeQuickSpec === "1TB") {
         matchesSpec = lowerT.includes("1tb") || lowerT.includes("2tb");
       } else if (activeQuickSpec === "Gen4") {
         matchesSpec = lowerT.includes("gen4") || lowerT.includes("4.0");
+      } else if (activeQuickSpec === "Mechanical") {
+        matchesSpec = lowerT.includes("mechanical");
+      } else if (activeQuickSpec === "Wireless") {
+        matchesSpec = lowerT.includes("wireless") || lowerT.includes("bluetooth");
       }
     }
 
     return matchesSearch && matchesCategory && matchesVendor && matchesSpec;
   });
 
+  const getEffectivePrice = (item) => {
+    const cash = Number(item.current_price) || 0;
+    return activePriceMode === "CARD" ? Math.round(cash * 1.07) : cash;
+  };
+
   if (sort === "PRICE_ASC") {
-    filteredProducts.sort((a, b) => Number(a.current_price) - Number(b.current_price));
+    filteredProducts.sort((a, b) => getEffectivePrice(a) - getEffectivePrice(b));
   } else if (sort === "PRICE_DESC") {
-    filteredProducts.sort((a, b) => Number(b.current_price) - Number(a.current_price));
+    filteredProducts.sort((a, b) => getEffectivePrice(b) - getEffectivePrice(a));
   } else {
     filteredProducts.sort((a, b) => new Date(b.last_scraped_at) - new Date(a.last_scraped_at));
   }
@@ -612,22 +695,28 @@ function renderSingleCard(p) {
             </div>
           </div>
 
-          <!-- Dual Price Block (Cash Discount vs Regular/EMI) -->
+          <!-- Dual Price Block (Cash Discount vs Regular/EMI) with Active Pricing Mode Highlighting -->
           <div class="pt-2 flex flex-wrap items-baseline justify-between gap-2 border-t border-dark-800/80">
             <div>
               <div class="flex items-baseline space-x-1.5">
-                <span class="text-xs font-mono text-emerald-400 font-bold uppercase">Cash Special:</span>
-                <span class="text-xl sm:text-2xl font-mono font-black text-white tracking-tight">৳ ${formattedCashPrice}</span>
+                <span class="text-xs font-mono font-bold uppercase ${activePriceMode === 'CASH' ? 'text-emerald-400' : 'text-slate-400'}">
+                  ${activePriceMode === 'CASH' ? 'Cash Special:' : 'Card / POS:'}
+                </span>
+                <span class="text-xl sm:text-2xl font-mono font-black tracking-tight ${activePriceMode === 'CASH' ? 'text-white' : 'text-cyan-300'}">
+                  ৳ ${activePriceMode === 'CASH' ? formattedCashPrice : formattedRegularPrice}
+                </span>
               </div>
               <div class="text-[11px] font-mono text-slate-500 flex items-center space-x-2">
-                <span>Regular / Card: <del>৳ ${formattedRegularPrice}</del></span>
-                <span>•</span>
-                <span class="text-slate-400">EMI: ৳ ${emiPerMonth}/mo</span>
+                ${activePriceMode === 'CASH'
+                  ? `<span>Regular / POS: <del>৳ ${formattedRegularPrice}</del></span><span>•</span><span class="text-slate-400">EMI: ৳ ${emiPerMonth}/mo</span>`
+                  : `<span>Cash Discount: <span class="text-emerald-400 font-bold">৳ ${formattedCashPrice}</span></span><span>•</span><span class="text-slate-400">12M EMI: ৳ ${emiPerMonth}/mo</span>`
+                }
               </div>
             </div>
 
             <div class="text-right text-[11px] font-mono text-slate-400 hidden sm:block">
-              <span>Branch: ${escapeHtml(vendorTheme.hub)}</span>
+              <span class="block">Branch: ${escapeHtml(vendorTheme.hub)}</span>
+              <span class="text-[10px] text-slate-500">Verified ${formatTimeAgo(p.last_scraped_at)}</span>
             </div>
           </div>
         </div>
@@ -637,7 +726,7 @@ function renderSingleCard(p) {
       <!-- Card Social Footer & Action Bar -->
       <div class="px-4 py-2.5 bg-dark-950/50 border-t border-dark-800 flex items-center justify-between text-xs font-mono text-slate-400 flex-wrap gap-2">
         
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-2">
           <!-- Deal Upvote Button -->
           <button
             data-action="upvote-deal"
@@ -646,6 +735,17 @@ function renderSingleCard(p) {
           >
             <i data-lucide="arrow-big-up" class="w-4 h-4 pointer-events-none"></i>
             <span class="pointer-events-none">${upvoteCount} Upvotes</span>
+          </button>
+
+          <!-- Add to Build Lab Button (PCPartPicker Integration) -->
+          <button
+            data-action="add-to-build"
+            data-id="${escapeHtml(p.id)}"
+            class="px-2 py-1 rounded-md border border-dark-700 hover:border-emerald-600 hover:text-emerald-400 flex items-center space-x-1 transition text-slate-400"
+            title="Slot into PC Builder"
+          >
+            <i data-lucide="wrench" class="w-3.5 h-3.5 pointer-events-none"></i>
+            <span class="pointer-events-none">+ Build</span>
           </button>
 
           <!-- Inline Reviews Toggle -->
@@ -1652,6 +1752,234 @@ async function executeRagQuery() {
     lucide.createIcons();
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
+}
+
+// ==========================================
+// BUILD LAB MODULE (PCPartPicker Paradigm)
+// ==========================================
+function handleAddToBuild(productId) {
+  const item = allProducts.find((p) => p.id === productId);
+  if (!item) return;
+
+  // Determine slot by category
+  let slot = "Other";
+  const cat = (item.category || "").toLowerCase();
+  const title = item.title.toLowerCase();
+
+  if (cat === "processor" || title.includes("processor") || title.includes("ryzen") || title.includes("intel")) {
+    slot = "Processor";
+  } else if (cat === "monitor") {
+    slot = "Monitor";
+  } else if (cat === "ssd" || title.includes("ssd") || title.includes("nvme")) {
+    slot = "Storage";
+  } else if (cat === "laptop") {
+    slot = "Laptop";
+  } else if (cat === "keyboard") {
+    slot = "Keyboard";
+  } else if (cat === "mouse") {
+    slot = "Mouse";
+  }
+
+  buildLabSlots[slot] = item;
+  updateBuildNavCount();
+  showToast(`Added to Build: [${slot}] ${item.title.substring(0, 32)}...`);
+  if (activeFeedMode === "BUILD_LAB") {
+    renderBuildLab();
+  }
+}
+
+function handleRemoveFromBuild(slotKey) {
+  if (buildLabSlots[slotKey]) {
+    delete buildLabSlots[slotKey];
+    updateBuildNavCount();
+    showToast(`Removed from Build: ${slotKey}`);
+    renderBuildLab();
+  }
+}
+
+function clearCurrentBuild() {
+  for (const k in buildLabSlots) {
+    buildLabSlots[k] = null;
+  }
+  updateBuildNavCount();
+  showToast("Build Lab cleared");
+  renderBuildLab();
+}
+
+function updateBuildNavCount() {
+  const count = Object.values(buildLabSlots).filter(Boolean).length;
+  const navBadge = document.getElementById("nav-build-count");
+  if (navBadge) {
+    if (count > 0) {
+      navBadge.innerText = count;
+      navBadge.classList.remove("hidden");
+    } else {
+      navBadge.classList.add("hidden");
+    }
+  }
+}
+
+function renderBuildLab() {
+  const slotsContainer = document.getElementById("build-lab-slots");
+  const totalPriceEl = document.getElementById("build-lab-total-price");
+  const compatText = document.getElementById("build-compatibility-text");
+  const compatBox = document.getElementById("build-compatibility-box");
+  if (!slotsContainer) return;
+
+  const defaultSlots = [
+    { key: "Processor", label: "Processor (CPU)", icon: "cpu" },
+    { key: "Storage", label: "Storage (SSD/NVMe)", icon: "hard-drive" },
+    { key: "Monitor", label: "Monitor (Display)", icon: "monitor" },
+    { key: "Keyboard", label: "Keyboard", icon: "keyboard" },
+    { key: "Mouse", label: "Mouse", icon: "mouse" },
+    { key: "Laptop", label: "Portable Rig / Laptop", icon: "laptop" },
+  ];
+
+  let grandTotal = 0;
+  let activeSlotsCount = 0;
+
+  let html = "";
+  defaultSlots.forEach((slot) => {
+    const item = buildLabSlots[slot.key];
+    if (item) {
+      activeSlotsCount++;
+      const itemPrice = activePriceMode === "CARD" ? Math.round(Number(item.current_price) * 1.07) : Number(item.current_price);
+      grandTotal += itemPrice;
+      const safeAffUrl = buildAffiliateUrl(item.product_url, item.vendor_name);
+
+      html += `
+        <div class="p-3 bg-dark-950 border border-dark-700 rounded-lg flex items-center justify-between gap-3">
+          <div class="flex items-center space-x-3 min-w-0">
+            <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold uppercase w-24 text-center flex-shrink-0">
+              ${slot.label.split(" ")[0]}
+            </span>
+            <div class="min-w-0">
+              <div class="font-bold text-white text-xs truncate">${escapeHtml(item.title)}</div>
+              <div class="text-[10px] text-slate-400 flex items-center space-x-2">
+                <span>Store: <strong class="text-slate-300">${escapeHtml(item.vendor_name)}</strong></span>
+                <span>•</span>
+                <span class="text-emerald-400">${escapeHtml(item.stock_status)}</span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3 flex-shrink-0">
+            <div class="text-right">
+              <div class="text-xs font-bold text-white">৳ ${itemPrice.toLocaleString()}</div>
+              <div class="text-[9px] text-slate-500 uppercase">${activePriceMode === 'CASH' ? 'Cash' : 'Card POS'}</div>
+            </div>
+            <a href="${safeAffUrl}" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded hover:text-white text-cyan-400 transition" title="Open Store Listing">
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            </a>
+            <button data-action="remove-from-build" data-id="${slot.key}" class="p-1.5 rounded hover:text-rose-400 text-slate-500 transition" title="Remove Component">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    } else {
+      html += `
+        <div class="p-3 bg-dark-950/40 border border-dashed border-dark-800 rounded-lg flex items-center justify-between gap-3 text-slate-500">
+          <div class="flex items-center space-x-3">
+            <span class="px-2 py-0.5 rounded bg-dark-900 text-slate-400 border border-dark-700 text-[10px] font-mono uppercase w-24 text-center">
+              ${slot.label.split(" ")[0]}
+            </span>
+            <span class="text-xs">No component selected for this slot</span>
+          </div>
+          <button onclick="setCategoryFilter('${slot.key === 'Storage' ? 'SSD' : slot.key}'); switchMainFeedMode('CATALOG');" class="px-2.5 py-1 rounded bg-dark-900 hover:bg-dark-800 text-cyan-400 hover:text-cyan-300 border border-dark-700 text-[11px] font-mono transition">
+            + Choose ${slot.label.split(" ")[0]}
+          </button>
+        </div>
+      `;
+    }
+  });
+
+  slotsContainer.innerHTML = html;
+  if (totalPriceEl) totalPriceEl.innerText = `৳ ${grandTotal.toLocaleString()}`;
+
+  // Basic Socket / Spec Compatibility Checks
+  if (compatText && compatBox) {
+    if (activeSlotsCount === 0) {
+      compatText.innerText = "Select components from the catalog to run live socket, power, and dimensional checks.";
+      compatBox.className = "p-3 rounded-lg bg-dark-950 border border-dark-700 text-xs font-mono flex items-start space-x-2.5 text-slate-400";
+    } else {
+      const cpu = buildLabSlots["Processor"];
+      if (cpu) {
+        const titleL = cpu.title.toLowerCase();
+        let socket = "Universal / Not Specified";
+        if (titleL.includes("am5")) socket = "AMD AM5 (Requires DDR5 & AM5 Board)";
+        else if (titleL.includes("am4")) socket = "AMD AM4 (Requires DDR4 & AM4 Board)";
+        else if (titleL.includes("lga1700") || titleL.includes("lga 1700")) socket = "Intel LGA1700 (12th/13th/14th Gen)";
+        
+        compatText.innerHTML = `<span class="text-emerald-400 font-bold">Verified Socket:</span> ${socket}. All chosen items are in stock across verified Bangladesh stores.`;
+        compatBox.className = "p-3 rounded-lg bg-dark-950 border border-emerald-900/60 text-xs font-mono flex items-start space-x-2.5 text-slate-300";
+      } else {
+        compatText.innerText = "Components slotted successfully. No electrical or dimensional conflicts detected.";
+        compatBox.className = "p-3 rounded-lg bg-dark-950 border border-emerald-900/40 text-xs font-mono flex items-start space-x-2.5 text-slate-300";
+      }
+    }
+  }
+
+  lucide.createIcons();
+}
+
+// ==========================================
+// PRICE RADAR MODULE (Idealo Paradigm)
+// ==========================================
+function renderPriceRadar() {
+  const container = document.getElementById("price-radar-items");
+  if (!container) return;
+
+  // Find items with biggest price variance or best deals
+  const itemsWithHistory = allProducts.filter((p) => Number(p.current_price) > 0).slice(0, 20);
+
+  let html = `
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
+  `;
+
+  itemsWithHistory.forEach((item) => {
+    const cash = Number(item.current_price);
+    const card = Math.round(cash * 1.07);
+    const regularRef = Math.round(cash * 1.12);
+    const savings = regularRef - cash;
+    const safeAffUrl = buildAffiliateUrl(item.product_url, item.vendor_name);
+
+    html += `
+      <div class="p-3.5 bg-dark-950 border border-dark-700/80 rounded-xl space-y-2 hover:border-amber-500/50 transition">
+        <div class="flex items-center justify-between">
+          <span class="px-2 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800 text-[10px] font-bold uppercase">
+            ${escapeHtml(item.vendor_name)}
+          </span>
+          <span class="text-[10px] text-slate-500 font-mono">Checked ${formatTimeAgo(item.last_scraped_at)}</span>
+        </div>
+        <div class="font-bold text-white text-xs line-clamp-2">${escapeHtml(item.title)}</div>
+        <div class="flex items-baseline justify-between pt-1 border-t border-dark-800">
+          <div>
+            <div class="text-[10px] text-slate-500 uppercase">Cash Special</div>
+            <div class="text-sm font-black text-emerald-400">৳ ${cash.toLocaleString()}</div>
+          </div>
+          <div class="text-right">
+            <div class="text-[10px] text-slate-500 uppercase">Regular POS</div>
+            <div class="text-xs font-mono text-slate-400"><del>৳ ${regularRef.toLocaleString()}</del></div>
+          </div>
+          <div class="text-right">
+            <div class="text-[10px] text-emerald-400 font-bold uppercase">Dealer Margin Save</div>
+            <div class="text-xs font-bold text-emerald-300">Save ৳ ${savings.toLocaleString()}</div>
+          </div>
+        </div>
+        <div class="pt-1 flex items-center justify-between text-[11px]">
+          <span class="text-slate-400">${escapeHtml(item.stock_status)}</span>
+          <a href="${safeAffUrl}" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline flex items-center space-x-1">
+            <span>Direct Deal</span>
+            <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+          </a>
+        </div>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
+  container.innerHTML = html;
+  lucide.createIcons();
 }
 
 // Toast

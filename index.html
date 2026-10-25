@@ -20,23 +20,35 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            sans: ['"Inter"', '"Plus Jakarta Sans"', 'sans-serif'],
             mono: ['"JetBrains Mono"', 'monospace'],
           },
           colors: {
+            radar: {
+              base: '#0B0F14',
+              surface: '#111821',
+              raised: '#18232F',
+              border: '#2A3745',
+              signal: '#77D4FF',
+              emerald: '#34D399',
+              amber: '#F5B94C',
+              rose: '#F87171',
+              alert: '#C0A4FF',
+              muted: '#A7B4C3'
+            },
             brand: {
-              emerald: '#10b981',
-              cyan: '#06b6d4',
-              amber: '#f59e0b',
-              rose: '#f43f5e',
+              emerald: '#34d399',
+              cyan: '#77d4ff',
+              amber: '#f5b94c',
+              rose: '#f87171',
             },
             dark: {
-              950: '#07090e',
-              900: '#0e1118',
-              850: '#141822',
-              800: '#1c212d',
-              700: '#272d3d',
-              600: '#384156',
+              950: '#0b0f14',
+              900: '#111821',
+              850: '#18232f',
+              800: '#202d3c',
+              700: '#2a3745',
+              600: '#3a4b5e',
             }
           }
         }
@@ -44,42 +56,51 @@
     }
   </script>
   <style>
+    :root {
+      --radar-base: #0B0F14;
+      --radar-surface: #111821;
+      --radar-raised: #18232F;
+      --radar-border: #2A3745;
+      --radar-signal: #77D4FF;
+      --radar-emerald: #34D399;
+      --radar-amber: #F5B94C;
+      --radar-rose: #F87171;
+      --radar-muted: #A7B4C3;
+    }
     body {
-      background-color: #06080d;
+      background-color: var(--radar-base);
       background-image: 
-        radial-gradient(rgba(6, 182, 212, 0.04) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(7, 9, 14, 0.85), #06080d);
+        radial-gradient(rgba(119, 212, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(17, 24, 33, 0.9), var(--radar-base));
       background-size: 24px 24px, 100% 100%;
       background-attachment: fixed;
       color: #e2e8f0;
-      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
     }
     .custom-scrollbar::-webkit-scrollbar {
       width: 5px;
       height: 5px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
-      background: #090c12;
+      background: #0b0f14;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #1e2638;
+      background: #2a3745;
       border-radius: 4px;
     }
     .cyber-card {
-      background: linear-gradient(145deg, rgba(14, 18, 27, 0.95), rgba(9, 12, 18, 0.98));
-      border: 1px solid rgba(45, 55, 75, 0.6);
-      box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.6);
+      background: linear-gradient(145deg, rgba(17, 24, 33, 0.97), rgba(11, 15, 20, 0.98));
+      border: 1px solid rgba(42, 55, 69, 0.8);
+      box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.65);
     }
     .cyber-card:hover {
-      border-color: rgba(6, 182, 212, 0.35);
-      box-shadow: 0 6px 24px -4px rgba(6, 182, 212, 0.12);
+      border-color: rgba(119, 212, 255, 0.4);
+      box-shadow: 0 6px 20px -4px rgba(119, 212, 255, 0.08);
     }
-    @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 0 0px rgba(6, 182, 212, 0); }
-      50% { box-shadow: 0 0 18px rgba(6, 182, 212, 0.4); }
-    }
-    .glow-active {
-      animation: pulseGlow 1.8s infinite;
+    .nav-pill-active {
+      background-color: #202d3c;
+      color: #ffffff;
+      border-color: #77d4ff;
     }
   </style>
 </head>
@@ -132,24 +153,43 @@
           </div>
         </a>
 
-        <!-- Header Nav Mode Switcher (Directly beside logo) -->
+        <!-- Header Nav Mode Switcher: 4-Room Architecture -->
         <nav class="flex items-center space-x-1 bg-dark-900 border border-dark-700/80 p-0.5 rounded-lg text-xs font-mono">
           <button
-            id="header-nav-hardware"
-            onclick="switchMainFeedMode('HARDWARE')"
+            id="header-nav-catalog"
+            onclick="switchMainFeedMode('CATALOG')"
             class="px-2.5 py-1 rounded-md font-bold flex items-center space-x-1.5 transition text-white bg-dark-800 shadow-sm border border-dark-600 cursor-pointer"
-            title="Browse Live Hardware & Price History"
+            title="Browse Geizhals-style Hardware Catalog & Specifications"
           >
-            <i data-lucide="cpu" class="w-3.5 h-3.5 text-cyan-400"></i>
-            <span class="hidden md:inline">Hardware</span>
+            <i data-lucide="layers" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <span class="hidden md:inline">Catalog</span>
+          </button>
+          <button
+            id="header-nav-builder"
+            onclick="switchMainFeedMode('BUILD_LAB')"
+            class="px-2.5 py-1 rounded-md font-semibold flex items-center space-x-1.5 transition text-slate-400 hover:text-white hover:bg-dark-850 cursor-pointer"
+            title="PCPartPicker-style Interactive PC Build Lab with Socket Compatibility"
+          >
+            <i data-lucide="wrench" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span class="hidden md:inline">Build Lab</span>
+            <span id="nav-build-count" class="hidden px-1 py-0.2 rounded bg-emerald-950 text-emerald-400 text-[9px] font-bold border border-emerald-800">0</span>
+          </button>
+          <button
+            id="header-nav-radar"
+            onclick="switchMainFeedMode('PRICE_RADAR')"
+            class="px-2.5 py-1 rounded-md font-semibold flex items-center space-x-1.5 transition text-slate-400 hover:text-white hover:bg-dark-850 cursor-pointer"
+            title="Idealo-style Bangladesh Market Price Alerts & Drops"
+          >
+            <i data-lucide="activity" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span class="hidden md:inline">Price Radar</span>
           </button>
           <button
             id="header-nav-community"
             onclick="switchMainFeedMode('COMMUNITY')"
             class="px-2.5 py-1 rounded-md font-semibold flex items-center space-x-1.5 transition text-slate-400 hover:text-white hover:bg-dark-850 cursor-pointer"
-            title="View BD Community Discussions & Deal Alerts"
+            title="HardwareLuxx-style BD Community Discussions & Deal Alerts"
           >
-            <i data-lucide="messages-square" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <i data-lucide="messages-square" class="w-3.5 h-3.5 text-cyan-300"></i>
             <span class="hidden md:inline">Community</span>
             <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
           </button>
@@ -197,22 +237,32 @@
     <div class="border-t border-dark-800 bg-dark-900/80 px-4 sm:px-6 lg:px-8">
       <div class="max-w-7xl mx-auto flex items-center justify-between text-xs font-mono py-1.5 overflow-x-auto custom-scrollbar gap-4">
         
-        <!-- Primary Feed Mode Switcher -->
-        <div class="flex items-center space-x-1 flex-shrink-0">
-          <button id="tab-mode-hardware" onclick="switchMainFeedMode('HARDWARE')" class="px-3 py-1 rounded text-white bg-dark-800 font-bold border border-dark-600 flex items-center space-x-1.5 shadow-sm">
-            <i data-lucide="cpu" class="w-3.5 h-3.5 text-cyan-400"></i>
-            <span>Live Hardware Matrix (<span id="header-product-count">--</span>)</span>
+        <!-- Pricing Model Switcher (Bangladesh Retail Engine) -->
+        <div class="flex items-center space-x-1 flex-shrink-0 bg-dark-950 p-0.5 rounded-lg border border-dark-700">
+          <button
+            id="price-mode-cash"
+            onclick="setPriceComparisonMode('CASH')"
+            class="px-2.5 py-1 rounded text-[11px] font-bold text-white bg-dark-800 border border-emerald-500/50 flex items-center space-x-1.5 shadow-sm transition"
+            title="Sort & Display by Cash Special Price (Bank / bKash / Cash discount)"
+          >
+            <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+            <span>Cash Special</span>
           </button>
-          <button id="tab-mode-community" onclick="switchMainFeedMode('COMMUNITY')" class="px-3 py-1 rounded hover:text-white hover:bg-dark-800/60 transition text-slate-400 flex items-center space-x-1.5">
-            <i data-lucide="messages-square" class="w-3.5 h-3.5 text-emerald-400"></i>
-            <span>BD Community Discussions</span>
+          <button
+            id="price-mode-card"
+            onclick="setPriceComparisonMode('CARD')"
+            class="px-2.5 py-1 rounded text-[11px] font-medium text-slate-400 hover:text-white transition flex items-center space-x-1.5"
+            title="Sort & Display by Regular Card POS / EMI Price"
+          >
+            <span class="h-2 w-2 rounded-full bg-slate-600"></span>
+            <span>Card POS / EMI</span>
           </button>
         </div>
 
         <!-- Hardware Category Badges -->
         <div id="category-pills-row" class="flex items-center space-x-1 flex-shrink-0 text-[11px] text-slate-400">
           <button onclick="setCategoryFilter('ALL')" class="category-tab px-2.5 py-0.5 rounded text-white bg-dark-800 font-semibold cursor-pointer" data-cat="ALL">
-            All Feed
+            All Feed (<span id="header-product-count">--</span>)
           </button>
           <button onclick="setCategoryFilter('Monitor')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition cursor-pointer" data-cat="Monitor">
             Monitors (<span id="count-monitors">--</span>)
@@ -238,27 +288,36 @@
     </div>
   </header>
 
-  <!-- SECONDARY SPEC FILTER BAR (REALISTIC E-COMMERCE ACCORDION) -->
+  <!-- SECONDARY SPEC FILTER & FACET BAR (GEIZHALS PARAMETRIC SYSTEM) -->
   <section class="bg-dark-950 border-b border-dark-800 px-4 sm:px-6 lg:px-8 py-2.5 text-xs font-mono">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-slate-400">
       
-      <!-- Quick Specs Filter Tags -->
+      <!-- Parametric Facet Filter Tags -->
       <div class="flex items-center flex-wrap gap-1.5" id="spec-filter-pills">
-        <span class="text-slate-500 font-bold uppercase text-[10px] mr-1">Quick Filters:</span>
-        <button onclick="applyQuickSpec('144Hz+')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px]">
-          144Hz+ Gaming
+        <span class="text-slate-500 font-bold uppercase text-[10px] mr-1">Parametric Specs:</span>
+        <button onclick="applyQuickSpec('AM5')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
+          AM5 Socket
         </button>
-        <button onclick="applyQuickSpec('2K')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px]">
-          1440p 2K / 4K
+        <button onclick="applyQuickSpec('LGA1700')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
+          LGA1700
         </button>
-        <button onclick="applyQuickSpec('IPS')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px]">
+        <button onclick="applyQuickSpec('144Hz+')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
+          144Hz+ High Refresh
+        </button>
+        <button onclick="applyQuickSpec('IPS')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
           Fast IPS / OLED
         </button>
-        <button onclick="applyQuickSpec('1TB')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px]">
+        <button onclick="applyQuickSpec('1TB')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
           1TB+ NVMe
         </button>
-        <button onclick="applyQuickSpec('Gen4')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px]">
+        <button onclick="applyQuickSpec('Gen4')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
           PCIe 4.0
+        </button>
+        <button onclick="applyQuickSpec('Mechanical')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
+          Mechanical Switch
+        </button>
+        <button onclick="applyQuickSpec('Wireless')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
+          Wireless 2.4G
         </button>
       </div>
 
@@ -284,7 +343,7 @@
           <span>Sort By:</span>
           <select id="feed-sort-filter" onchange="applyFilters()" class="bg-dark-900 border border-dark-700 rounded px-2 py-1 text-white text-[11px] focus:outline-none focus:border-cyan-500">
             <option value="NEWEST">Recently Crawled</option>
-            <option value="PRICE_ASC">Price: Low to High (Cash)</option>
+            <option value="PRICE_ASC">Price: Low to High</option>
             <option value="PRICE_DESC">Price: High to Low</option>
           </select>
         </div>
@@ -335,6 +394,71 @@
               <span>Publish Thread</span>
               <i data-lucide="send" class="w-3.5 h-3.5"></i>
             </button>
+          </div>
+        </div>
+
+        <!-- BUILD LAB INTERACTIVE WORKSPACE (PCPartPicker Style) -->
+        <div id="build-lab-view" class="hidden space-y-4">
+          <div class="bg-dark-900 border border-dark-700 rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-dark-700/80 pb-3 flex-wrap gap-2">
+              <div class="flex items-center space-x-3">
+                <div class="h-9 w-9 rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center justify-center">
+                  <i data-lucide="wrench" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h2 class="text-sm font-extrabold text-white tracking-wide uppercase font-mono">Custom PC Build Lab</h2>
+                  <p class="text-[11px] text-slate-400 font-mono">Assemble compatible components with live Bangladesh store totals</p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3 font-mono">
+                <div class="text-right">
+                  <div class="text-[10px] text-slate-500 uppercase">Estimated Total Cost</div>
+                  <div id="build-lab-total-price" class="text-lg font-black text-emerald-400">৳ 0</div>
+                </div>
+                <button onclick="clearCurrentBuild()" class="px-2.5 py-1 rounded bg-dark-800 hover:bg-dark-700 text-slate-400 text-xs border border-dark-700 transition" title="Clear build list">
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <!-- Socket Compatibility Notice Inspector -->
+            <div id="build-compatibility-box" class="p-3 rounded-lg bg-dark-950 border border-dark-700 text-xs font-mono flex items-start space-x-2.5">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+              <div>
+                <span class="font-bold text-slate-200">Compatibility Inspector:</span>
+                <span id="build-compatibility-text" class="text-slate-400 ml-1">No hardware conflicts detected. Start selecting parts.</span>
+              </div>
+            </div>
+
+            <!-- Build Component Slot Rows -->
+            <div id="build-lab-slots" class="space-y-2.5 text-xs font-mono">
+              <!-- Rendered dynamically by app.js -->
+            </div>
+          </div>
+        </div>
+
+        <!-- PRICE RADAR MARKET INTELLIGENCE VIEW (Idealo Style) -->
+        <div id="price-radar-view" class="hidden space-y-4">
+          <div class="bg-dark-900 border border-dark-700 rounded-xl p-5 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-dark-700/80 pb-3 flex-wrap gap-2">
+              <div class="flex items-center space-x-3">
+                <div class="h-9 w-9 rounded-lg bg-amber-950 text-amber-400 border border-amber-800 flex items-center justify-center">
+                  <i data-lucide="activity" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h2 class="text-sm font-extrabold text-white tracking-wide uppercase font-mono">Bangladesh Price Radar</h2>
+                  <p class="text-[11px] text-slate-400 font-mono">Real-time dealer margins, deal dips & retailer discrepancies</p>
+                </div>
+              </div>
+              <div class="text-[11px] font-mono text-slate-400">
+                Tracking <span class="text-cyan-400 font-bold">8,600+</span> items across 10 BD stores
+              </div>
+            </div>
+
+            <!-- Price Drop Radar Items -->
+            <div id="price-radar-items" class="space-y-3">
+              <!-- Rendered dynamically by app.js -->
+            </div>
           </div>
         </div>
 
