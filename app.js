@@ -477,11 +477,18 @@ function applyFilters() {
   const query = document.getElementById("global-search").value.toLowerCase().trim();
   const vendor = document.getElementById("feed-vendor-filter").value;
   const sort = document.getElementById("feed-sort-filter").value;
+  const excludeOutOfStock = document.getElementById("feed-in-stock-only")?.checked || false;
 
   filteredProducts = allProducts.filter((p) => {
     const matchesSearch = !query || p.title.toLowerCase().includes(query) || p.vendor_name.toLowerCase().includes(query);
     const matchesCategory = activeCategory === "ALL" || (p.category && p.category.toLowerCase() === activeCategory.toLowerCase());
     const matchesVendor = vendor === "ALL" || p.vendor_name.toLowerCase() === vendor.toLowerCase();
+
+    // Stock availability filter
+    if (excludeOutOfStock) {
+      const isInStock = (p.stock_status || "").toLowerCase().includes("in stock");
+      if (!isInStock) return false;
+    }
 
     // Parametric Spec Facets Check
     let matchesSpec = true;
