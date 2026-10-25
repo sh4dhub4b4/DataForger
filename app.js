@@ -364,10 +364,20 @@ function handleSearch() {
   }
 }
 
-// Render Hardware Feed with Sanitization
+// Render Hardware Feed with Sanitization & Memory Leak Prevention
 function renderHardwareFeed(reset = false) {
   const container = document.getElementById("hardware-feed");
   const loadMoreBtn = document.getElementById("btn-load-more");
+
+  if (reset) {
+    // Destroy all active charts before wiping DOM to prevent memory leaks
+    Object.values(chartInstances).forEach((c) => {
+      if (c && typeof c.destroy === "function") {
+        try { c.destroy(); } catch (e) {}
+      }
+    });
+    for (const k in chartInstances) delete chartInstances[k];
+  }
 
   if (filteredProducts.length === 0) {
     container.innerHTML = `
@@ -466,7 +476,7 @@ function renderSingleCard(p) {
   `).join("");
 
   return `
-    <article class="bg-dark-900 border border-dark-700 rounded-xl overflow-hidden hover:border-dark-600 transition shadow-sm" id="card-${escapeHtml(p.id)}">
+    <article class="cyber-card ${vendorTheme.borderAccent} rounded-xl overflow-hidden transition" id="card-${escapeHtml(p.id)}">
       
       <!-- Card Top: Retailer Header, Stock, and Comparison Check -->
       <div class="px-4 py-2.5 bg-dark-950/70 border-b border-dark-800 flex items-center justify-between text-xs font-mono">
@@ -538,7 +548,7 @@ function renderSingleCard(p) {
             </div>
 
             <div class="text-right text-[11px] font-mono text-slate-400 hidden sm:block">
-              <span>Pickup: IDB & Multiplan</span>
+              <span>Branch: ${escapeHtml(vendorTheme.hub)}</span>
             </div>
           </div>
         </div>
@@ -1562,15 +1572,39 @@ function showToast(msg) {
   }, 2600);
 }
 
-// Vendor Theme Helper
+// Vendor Theme Helper with Bangladeshi Market Context & Hubs
 function getVendorTheme(vendor) {
-  const v = vendor.toLowerCase();
-  if (v.includes("star tech")) return { badge: "bg-orange-500/10 text-orange-400 border border-orange-500/30" };
-  if (v.includes("tech land")) return { badge: "bg-red-500/10 text-red-400 border border-red-500/30" };
-  if (v.includes("ryans")) return { badge: "bg-yellow-500/10 text-yellow-300 border border-yellow-500/30" };
-  if (v.includes("bdstall")) return { badge: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" };
-  if (v.includes("binary logic")) return { badge: "bg-blue-500/10 text-blue-400 border border-blue-500/30" };
-  return { badge: "bg-dark-800 text-slate-300 border border-dark-700" };
+  const v = (vendor || "").toLowerCase();
+  if (v.includes("star tech")) return { 
+    badge: "bg-red-950/80 text-red-400 border border-red-800 font-bold",
+    borderAccent: "border-l-2 border-l-red-500",
+    hub: "Elephant Rd & IDB"
+  };
+  if (v.includes("tech land")) return { 
+    badge: "bg-orange-950/80 text-orange-400 border border-orange-800 font-bold",
+    borderAccent: "border-l-2 border-l-orange-500",
+    hub: "Multiplan Level 5"
+  };
+  if (v.includes("ryans")) return { 
+    badge: "bg-sky-950/80 text-sky-400 border border-sky-800 font-bold",
+    borderAccent: "border-l-2 border-l-sky-500",
+    hub: "Kakrail & Banani"
+  };
+  if (v.includes("bdstall")) return { 
+    badge: "bg-emerald-950/80 text-emerald-400 border border-emerald-800 font-bold",
+    borderAccent: "border-l-2 border-l-emerald-500",
+    hub: "Courier 24h"
+  };
+  if (v.includes("binary logic")) return { 
+    badge: "bg-indigo-950/80 text-indigo-400 border border-indigo-800 font-bold",
+    borderAccent: "border-l-2 border-l-indigo-500",
+    hub: "Computer City L4"
+  };
+  return { 
+    badge: "bg-dark-800 text-slate-300 border border-dark-700",
+    borderAccent: "border-l-2 border-l-cyan-500",
+    hub: "Dhaka Retail"
+  };
 }
 
 // Format Time
