@@ -43,6 +43,19 @@ document.addEventListener("DOMContentLoaded", () => {
   updateUserUI();
   fetchOutboundStats();
   handleUrlDeepLink();
+
+  // URL Hash handling (#community vs #hardware)
+  if (window.location.hash.toLowerCase() === "#community") {
+    switchMainFeedMode("COMMUNITY");
+  }
+  window.addEventListener("hashchange", () => {
+    const hash = window.location.hash.toLowerCase();
+    if (hash === "#community" && activeFeedMode !== "COMMUNITY") {
+      switchMainFeedMode("COMMUNITY");
+    } else if ((hash === "#hardware" || hash === "") && activeFeedMode !== "HARDWARE") {
+      switchMainFeedMode("HARDWARE");
+    }
+  });
 });
 
 // Event Delegation (Prevents XSS in inline handlers)
@@ -75,6 +88,9 @@ function setupGlobalEventDelegation() {
         break;
       case "toggle-compare":
         toggleCompareItem(id);
+        break;
+      case "highlight-product":
+        highlightProduct(id);
         break;
     }
   });
@@ -175,25 +191,46 @@ function switchMainFeedMode(mode) {
   activeFeedMode = mode;
   const tabHw = document.getElementById("tab-mode-hardware");
   const tabComm = document.getElementById("tab-mode-community");
+  const headerNavHw = document.getElementById("header-nav-hardware");
+  const headerNavComm = document.getElementById("header-nav-community");
   const pillsRow = document.getElementById("category-pills-row");
   const postComposer = document.getElementById("community-post-composer");
-  const specFilters = document.getElementById("spec-filter-pills").parentElement;
+  const specFiltersPill = document.getElementById("spec-filter-pills");
+  const specFilters = specFiltersPill ? specFiltersPill.parentElement : null;
 
   if (mode === "HARDWARE") {
-    tabHw.className = "px-3 py-1 rounded text-white bg-dark-800 font-bold border border-dark-600 flex items-center space-x-1.5 shadow-sm";
-    tabComm.className = "px-3 py-1 rounded hover:text-white hover:bg-dark-800/60 transition text-slate-400 flex items-center space-x-1.5";
-    pillsRow.classList.remove("hidden");
-    pillsRow.classList.add("flex");
-    postComposer.classList.add("hidden");
-    specFilters.classList.remove("hidden");
+    if (tabHw) tabHw.className = "px-3 py-1 rounded text-white bg-dark-800 font-bold border border-dark-600 flex items-center space-x-1.5 shadow-sm cursor-pointer";
+    if (tabComm) tabComm.className = "px-3 py-1 rounded hover:text-white hover:bg-dark-800/60 transition text-slate-400 flex items-center space-x-1.5 cursor-pointer";
+    if (headerNavHw) headerNavHw.className = "px-2.5 py-1 rounded-md font-bold flex items-center space-x-1.5 transition text-white bg-dark-800 shadow-sm border border-dark-600 cursor-pointer";
+    if (headerNavComm) headerNavComm.className = "px-2.5 py-1 rounded-md font-semibold flex items-center space-x-1.5 transition text-slate-400 hover:text-white hover:bg-dark-850 cursor-pointer";
+
+    if (pillsRow) {
+      pillsRow.classList.remove("hidden");
+      pillsRow.classList.add("flex");
+    }
+    if (postComposer) postComposer.classList.add("hidden");
+    if (specFilters) specFilters.classList.remove("hidden");
+
+    if (window.location.hash !== "#hardware" && window.location.hash !== "") {
+      history.replaceState(null, null, "#hardware");
+    }
     renderHardwareFeed(true);
   } else {
-    tabComm.className = "px-3 py-1 rounded text-white bg-dark-800 font-bold border border-dark-600 flex items-center space-x-1.5 shadow-sm";
-    tabHw.className = "px-3 py-1 rounded hover:text-white hover:bg-dark-800/60 transition text-slate-400 flex items-center space-x-1.5";
-    pillsRow.classList.add("hidden");
-    pillsRow.classList.remove("flex");
-    postComposer.classList.remove("hidden");
-    specFilters.classList.add("hidden");
+    if (tabComm) tabComm.className = "px-3 py-1 rounded text-white bg-dark-800 font-bold border border-dark-600 flex items-center space-x-1.5 shadow-sm cursor-pointer";
+    if (tabHw) tabHw.className = "px-3 py-1 rounded hover:text-white hover:bg-dark-800/60 transition text-slate-400 flex items-center space-x-1.5 cursor-pointer";
+    if (headerNavComm) headerNavComm.className = "px-2.5 py-1 rounded-md font-bold flex items-center space-x-1.5 transition text-white bg-dark-800 shadow-sm border border-dark-600 cursor-pointer";
+    if (headerNavHw) headerNavHw.className = "px-2.5 py-1 rounded-md font-semibold flex items-center space-x-1.5 transition text-slate-400 hover:text-white hover:bg-dark-850 cursor-pointer";
+
+    if (pillsRow) {
+      pillsRow.classList.add("hidden");
+      pillsRow.classList.remove("flex");
+    }
+    if (postComposer) postComposer.classList.remove("hidden");
+    if (specFilters) specFilters.classList.add("hidden");
+
+    if (window.location.hash !== "#community") {
+      history.replaceState(null, null, "#community");
+    }
     renderCommunityPostsFeed();
   }
 }
@@ -557,7 +594,7 @@ function renderSingleCard(p) {
           <a
             href="${safeAffiliateUrl}"
             target="_blank"
-            rel="sponsored noopener"
+            rel="noopener noreferrer nofollow sponsored"
             onclick="trackAffiliateClick('${escapeHtml(p.id)}', '${escapeHtml(p.vendor_name)}', '${safeAffiliateUrl}', ${p.current_price})"
             class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold border border-emerald-500/80 flex items-center space-x-1.5 transition text-xs shadow-sm"
           >
@@ -721,7 +758,7 @@ function openComparisonModal() {
           <a
             href="${affiliateUrl}"
             target="_blank"
-            rel="sponsored noopener"
+            rel="noopener noreferrer nofollow sponsored"
             class="block w-full py-2 text-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs font-mono transition"
           >
             Buy on ${escapeHtml(item.vendor_name)} →
@@ -953,8 +990,9 @@ async function loadProductComments(productId) {
     }
 
     thread.innerHTML = data.map((r) => {
-      const maskedPhone = r.user_phone.replace(/^(\+?880?1[3-9]\d)(\d{4})(\d{3})$/, "$1••••$3");
-      const stars = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
+      const rawRating = Math.max(1, Math.min(5, Number(r.rating) || 5));
+      const maskedPhone = escapeHtml(String(r.user_phone || "").replace(/^(\+?880?1[3-9]\d)(\d{4})(\d{3})$/, "$1••••$3"));
+      const stars = "★".repeat(rawRating) + "☆".repeat(5 - rawRating);
 
       return `
         <div class="p-2.5 bg-dark-900 border border-dark-700 rounded-lg space-y-1">
@@ -1060,12 +1098,18 @@ async function submitCommunityPost() {
     return;
   }
 
-  const title = document.getElementById("post-title-input").value.trim();
+  const rawTitle = document.getElementById("post-title-input").value;
+  const title = (rawTitle || "").trim().slice(0, 140);
   const postType = document.getElementById("post-type-select").value;
-  const content = document.getElementById("post-content-input").value.trim();
+  const rawContent = document.getElementById("post-content-input").value;
+  const content = (rawContent || "").trim().slice(0, 3000);
 
-  if (!title || !content) {
-    showToast("Title and content are required.");
+  if (title.length < 5) {
+    showToast("Discussion title must be at least 5 characters.");
+    return;
+  }
+  if (content.length < 10) {
+    showToast("Content must be at least 10 characters.");
     return;
   }
 
@@ -1115,12 +1159,13 @@ async function fetchLiveRecentReviews() {
     }
 
     container.innerHTML = data.map((r) => {
-      const maskedPhone = r.user_phone.replace(/^(\+?880?1[3-9]\d)(\d{4})(\d{3})$/, "$1••••$3");
-      const stars = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
+      const rawRating = Math.max(1, Math.min(5, Number(r.rating) || 5));
+      const maskedPhone = escapeHtml(String(r.user_phone || "").replace(/^(\+?880?1[3-9]\d)(\d{4})(\d{3})$/, "$1••••$3"));
+      const stars = "★".repeat(rawRating) + "☆".repeat(5 - rawRating);
       const productTitle = r.products ? r.products.title : "Component";
 
       return `
-        <div class="p-2.5 bg-dark-950/70 border border-dark-700 rounded-lg space-y-1.5 hover:border-dark-600 transition cursor-pointer" onclick="highlightProduct('${escapeHtml(r.product_id)}')">
+        <div class="p-2.5 bg-dark-950/70 border border-dark-700 rounded-lg space-y-1.5 hover:border-dark-600 transition cursor-pointer" data-action="highlight-product" data-id="${escapeHtml(r.product_id)}">
           <div class="flex items-center justify-between text-[11px] font-mono">
             <span class="font-bold text-white">${escapeHtml(r.user_name || 'Buyer')}</span>
             <span class="text-amber-400">${stars}</span>
@@ -1198,16 +1243,29 @@ async function handleDealUpvote(productId, buttonEl) {
   }
 }
 
-// Upvote Community Post
+// Upvote Community Post (Atomic & Fraud Protected)
 async function handlePostUpvote(postId) {
-  const post = communityPosts.find((p) => p.id === postId);
-  if (post) {
-    post.upvotes_count = (post.upvotes_count || 0) + 1;
-    renderCommunityPostsFeed();
-    showToast("Post upvoted!");
-    try {
-      await sb.from("community_posts").update({ upvotes_count: post.upvotes_count }).eq("id", postId);
-    } catch (e) {}
+  if (!currentUser) {
+    openAuthModal();
+    showToast("Please sign in with your phone to upvote discussions.");
+    return;
+  }
+
+  try {
+    const { data, error } = await sb.rpc("toggle_post_upvote", {
+      p_post_id: postId,
+      p_user_phone: currentUser.user_phone,
+    });
+    if (error) throw error;
+
+    const post = communityPosts.find((p) => p.id === postId);
+    if (post && data) {
+      post.upvotes_count = data.total_upvotes;
+      renderCommunityPostsFeed();
+      showToast(data.upvoted ? "Post upvoted! 🔥" : "Upvote removed");
+    }
+  } catch (err) {
+    showToast(`Vote error: ${err.message}`);
   }
 }
 
@@ -1301,35 +1359,37 @@ function closeAuthModal() {
 }
 
 async function handleAuthSubmit() {
-  const phone = document.getElementById("auth-phone-input").value.trim();
-  const username = document.getElementById("auth-username-input").value.trim();
-  const bio = document.getElementById("auth-bio-input").value.trim() || "PC Builder & Hardware Enthusiast";
+  const rawPhone = document.getElementById("auth-phone-input").value;
+  const phone = (rawPhone || "").trim().replace(/[\s-]/g, "");
+  const rawUsername = document.getElementById("auth-username-input").value;
+  const cleanUsername = (rawUsername || "").trim().replace(/[^a-zA-Z0-9_]/g, "").slice(0, 25);
+  const rawBio = document.getElementById("auth-bio-input").value;
+  const cleanBio = (rawBio || "").trim().slice(0, 140) || "PC Builder & Hardware Enthusiast";
 
   const bdPhoneRegex = /^(\+8801|01)[3-9]\d{8}$/;
   if (!bdPhoneRegex.test(phone)) {
     showToast("Invalid Bangladeshi phone number (01XXXXXXXXX).");
     return;
   }
-  if (!username || username.length < 3) {
-    showToast("Username must be at least 3 characters.");
+  if (!cleanUsername || cleanUsername.length < 3) {
+    showToast("Username must be 3-25 alphanumeric characters (a-z, 0-9, _).");
     return;
   }
 
-  const profileData = {
-    user_phone: phone,
-    username: username,
-    bio: bio,
-    reputation_points: 25,
-  };
-
   try {
-    await sb.from("user_profiles").upsert([profileData], { onConflict: "user_phone" });
-    currentUser = profileData;
-    localStorage.setItem("tp_current_user", JSON.stringify(profileData));
+    const { data, error } = await sb.rpc("safe_upsert_profile", {
+      p_phone: phone,
+      p_username: cleanUsername,
+      p_bio: cleanBio,
+    });
+    if (error) throw error;
+
+    currentUser = data;
+    localStorage.setItem("tp_current_user", JSON.stringify(data));
 
     closeAuthModal();
     updateUserUI();
-    showToast(`Welcome @${username}! Profile active.`);
+    showToast(`Welcome @${cleanUsername}! Profile verified.`);
   } catch (err) {
     showToast(`Error: ${err.message}`);
   }
@@ -1456,7 +1516,7 @@ async function executeRagQuery() {
         </div>
         <div class="text-[11px] text-slate-400 flex items-center justify-between">
           <span>Store: <strong>${escapeHtml(item.vendor_name)}</strong> (${escapeHtml(item.stock_status)})</span>
-          <a href="${affiliateUrl}" target="_blank" rel="sponsored" class="text-cyan-400 hover:underline">View Store →</a>
+          <a href="${affiliateUrl}" target="_blank" rel="noopener noreferrer nofollow sponsored" class="text-cyan-400 hover:underline">View Store →</a>
         </div>
       </div>
     `;
