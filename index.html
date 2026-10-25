@@ -211,20 +211,26 @@
 
         <!-- Hardware Category Badges -->
         <div id="category-pills-row" class="flex items-center space-x-1 flex-shrink-0 text-[11px] text-slate-400">
-          <button onclick="setCategoryFilter('ALL')" class="category-tab px-2.5 py-0.5 rounded text-white bg-dark-800 font-semibold" data-cat="ALL">
+          <button onclick="setCategoryFilter('ALL')" class="category-tab px-2.5 py-0.5 rounded text-white bg-dark-800 font-semibold cursor-pointer" data-cat="ALL">
             All Feed
           </button>
-          <button onclick="setCategoryFilter('Monitor')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition" data-cat="Monitor">
+          <button onclick="setCategoryFilter('Monitor')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition cursor-pointer" data-cat="Monitor">
             Monitors (<span id="count-monitors">--</span>)
           </button>
-          <button onclick="setCategoryFilter('SSD')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition" data-cat="SSD">
+          <button onclick="setCategoryFilter('SSD')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition cursor-pointer" data-cat="SSD">
             SSDs (<span id="count-ssds">--</span>)
           </button>
-          <button onclick="setCategoryFilter('Processor')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition" data-cat="Processor">
-            Processors
+          <button onclick="setCategoryFilter('Laptop')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition cursor-pointer" data-cat="Laptop">
+            Laptops (<span id="count-laptops">--</span>)
           </button>
-          <button onclick="setCategoryFilter('Keyboard')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition" data-cat="Keyboard">
-            Keyboards
+          <button onclick="setCategoryFilter('Keyboard')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition cursor-pointer" data-cat="Keyboard">
+            Keyboards (<span id="count-keyboards">--</span>)
+          </button>
+          <button onclick="setCategoryFilter('Mouse')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition cursor-pointer" data-cat="Mouse">
+            Mice (<span id="count-mice">--</span>)
+          </button>
+          <button onclick="setCategoryFilter('Processor')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition cursor-pointer" data-cat="Processor">
+            Processors (<span id="count-processors">--</span>)
           </button>
         </div>
 
@@ -261,10 +267,14 @@
         <div class="flex items-center space-x-1.5">
           <span>Retailer:</span>
           <select id="feed-vendor-filter" onchange="applyFilters()" class="bg-dark-900 border border-dark-700 rounded px-2 py-1 text-white text-[11px] focus:outline-none focus:border-cyan-500">
-            <option value="ALL">All Stores (Star Tech, Tech Land, Ryans)</option>
+            <option value="ALL">All Stores (Star Tech, Tech Land, Ryans...)</option>
             <option value="Star Tech">Star Tech</option>
             <option value="Tech Land">Tech Land</option>
             <option value="Ryans">Ryans</option>
+            <option value="PC House BD">PC House BD</option>
+            <option value="Computer Village">Computer Village</option>
+            <option value="Potaka IT">Potaka IT</option>
+            <option value="UCC">UCC</option>
             <option value="BDstall">BDstall</option>
             <option value="Binary Logic">Binary Logic</option>
           </select>
