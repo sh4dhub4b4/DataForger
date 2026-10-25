@@ -141,19 +141,40 @@ function setupInfiniteScrollObserver() {
   observer.observe(sentinel);
 }
 
-// Fetch Initial Data
+// Fetch Initial Data (Paginated to support thousands of hardware listings)
 async function fetchInitialData() {
   try {
-    const [productsRes, postsRes] = await Promise.all([
-      sb.from("products").select("*, price_history(*)").order("last_scraped_at", { ascending: false }),
-      sb.from("community_posts").select("*").order("created_at", { ascending: false }).limit(20)
-    ]);
+    const pageSize = 1000;
+    let allFetched = [];
+    let from = 0;
+    const maxFetch = 6000;
 
-    if (productsRes.error) throw productsRes.error;
+    while (from < maxFetch) {
+      const { data, error } = await sb
+        .from("products")
+        .select("*, price_history(recorded_at, price)")
+        .order("last_scraped_at", { ascending: false })
+        .range(from, from + pageSize - 1);
 
-    allProducts = productsRes.data || [];
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+
+      allFetched.push(...data);
+      if (data.length < pageSize) break;
+      from += pageSize;
+    }
+
+    const { data: posts, error: postsErr } = await sb
+      .from("community_posts")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(25);
+
+    if (postsErr) throw postsErr;
+
+    allProducts = allFetched;
     filteredProducts = [...allProducts];
-    communityPosts = postsRes.data || [];
+    communityPosts = posts || [];
 
     updateCategoryCounts();
     populateProductPicker();
@@ -169,14 +190,22 @@ async function fetchInitialData() {
   }
 }
 
-// Category Counts
+// Category Counts Across All Core Categories
 function updateCategoryCounts() {
-  document.getElementById("header-product-count").innerText = allProducts.length;
-  const monitorCount = allProducts.filter((p) => p.category === "Monitor").length;
-  const ssdCount = allProducts.filter((p) => p.category === "SSD").length;
+  const totalCountEl = document.getElementById("header-product-count");
+  if (totalCountEl) totalCountEl.innerText = allProducts.length.toLocaleString();
 
-  document.getElementById("count-monitors").innerText = monitorCount;
-  document.getElementById("count-ssds").innerText = ssdCount;
+  const setCnt = (id, cat) => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = allProducts.filter((p) => (p.category || "").toLowerCase() === cat.toLowerCase()).length;
+  };
+
+  setCnt("count-monitors", "Monitor");
+  setCnt("count-ssds", "SSD");
+  setCnt("count-laptops", "Laptop");
+  setCnt("count-keyboards", "Keyboard");
+  setCnt("count-mice", "Mouse");
+  setCnt("count-processors", "Processor");
 }
 
 // Populate Composer Dropdown
@@ -310,6 +339,52 @@ function extractHardwareSpecs(title, category) {
     else if (t.includes("2.5")) specs.push({ label: "2.5-Inch", type: "form" });
   }
 
+  // Laptops
+  if (category === "Laptop" || t.includes("laptop") || t.includes("notebook")) {
+    const screenMatch = title.match(/(\d{2}(\.\d)?)\s*("|inch)/i);
+    if (screenMatch) specs.push({ label: screenMatch[0], type: "size" });
+
+    if (t.includes("core i9") || t.includes("i9-")) specs.push({ label: "Core i9", type: "cpu" });
+    else if (t.includes("core i7") || t.includes("i7-")) specs.push({ label: "Core i7", type: "cpu" });
+    else if (t.includes("core i5") || t.includes("i5-")) specs.push({ label: "Core i5", type: "cpu" });
+    else if (t.includes("core i3") || t.includes("i3-")) specs.push({ label: "Core i3", type: "cpu" });
+    else if (t.includes("ryzen 7") || t.includes("r7-")) specs.push({ label: "Ryzen 7", type: "cpu" });
+    else if (t.includes("ryzen 5") || t.includes("r5-")) specs.push({ label: "Ryzen 5", type: "cpu" });
+    else if (t.includes("ryzen 3") || t.includes("r3-")) specs.push({ label: "Ryzen 3", type: "cpu" });
+
+    if (t.includes("16gb")) specs.push({ label: "16GB RAM", type: "ram" });
+    else if (t.includes("8gb") && !t.includes("8gb vram")) specs.push({ label: "8GB RAM", type: "ram" });
+    else if (t.includes("32gb")) specs.push({ label: "32GB RAM", type: "ram" });
+
+    if (t.includes("rtx 4060")) specs.push({ label: "RTX 4060", type: "gpu" });
+    else if (t.includes("rtx 4050")) specs.push({ label: "RTX 4050", type: "gpu" });
+    else if (t.includes("rtx 3050")) specs.push({ label: "RTX 3050", type: "gpu" });
+  }
+
+  // Keyboards
+  if (category === "Keyboard" || t.includes("keyboard")) {
+    if (t.includes("mechanical")) specs.push({ label: "Mechanical", type: "switch" });
+    if (t.includes("wireless") || t.includes("bluetooth")) specs.push({ label: "Wireless", type: "connectivity" });
+    if (t.includes("rgb")) specs.push({ label: "RGB Backlit", type: "lighting" });
+    if (t.includes("blue switch")) specs.push({ label: "Blue Switch", type: "switch" });
+    else if (t.includes("red switch")) specs.push({ label: "Red Switch", type: "switch" });
+  }
+
+  // Mice
+  if (category === "Mouse" || t.includes("mouse")) {
+    const dpiMatch = title.match(/(\d{4,5})\s*dpi/i);
+    if (dpiMatch) specs.push({ label: dpiMatch[0].toUpperCase(), type: "dpi" });
+    if (t.includes("wireless")) specs.push({ label: "Wireless", type: "connectivity" });
+    if (t.includes("optical")) specs.push({ label: "Optical", type: "sensor" });
+  }
+
+  // Processors
+  if (category === "Processor" || t.includes("processor") || t.includes("ryzen") || t.includes("intel")) {
+    if (t.includes("am5")) specs.push({ label: "AM5 Socket", type: "socket" });
+    else if (t.includes("am4")) specs.push({ label: "AM4 Socket", type: "socket" });
+    else if (t.includes("lga1700") || t.includes("lga 1700")) specs.push({ label: "LGA1700", type: "socket" });
+  }
+
   return specs;
 }
 
@@ -356,12 +431,16 @@ function applyFilters() {
   renderHardwareFeed(true);
 }
 
+let searchDebounceTimer = null;
 function handleSearch() {
-  if (activeFeedMode === "COMMUNITY") {
-    renderCommunityPostsFeed();
-  } else {
-    applyFilters();
-  }
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => {
+    if (activeFeedMode === "COMMUNITY") {
+      renderCommunityPostsFeed();
+    } else {
+      applyFilters();
+    }
+  }, 120);
 }
 
 // Render Hardware Feed with Sanitization & Memory Leak Prevention
