@@ -58,7 +58,19 @@ func (s *SupabaseClient) PushBatch(items []ScrapedItem) (*SupabaseBatchResponse,
 		return &SupabaseBatchResponse{Status: "empty", Processed: 0, PriceUpdates: 0}, nil
 	}
 
-	reqBody, err := json.Marshal(SupabaseBatchRequest{Items: items})
+	var sanitizedItems []ScrapedItem
+	for _, it := range items {
+		cleanItem, ok := SanitizeItem(it)
+		if ok {
+			sanitizedItems = append(sanitizedItems, cleanItem)
+		}
+	}
+
+	if len(sanitizedItems) == 0 {
+		return &SupabaseBatchResponse{Status: "filtered_all", Processed: 0, PriceUpdates: 0}, nil
+	}
+
+	reqBody, err := json.Marshal(SupabaseBatchRequest{Items: sanitizedItems})
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling batch: %w", err)
 	}
