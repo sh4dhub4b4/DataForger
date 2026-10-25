@@ -1,0 +1,17 @@
+# Go Binaries
+scraper/*.exe
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Node / Dependencies
+node_modules/
+.env.local
+.env
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

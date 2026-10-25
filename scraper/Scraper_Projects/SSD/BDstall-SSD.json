@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "name": "BDstall-SSD",
+    "url": "https://www.bdstall.com/ssd/"
+  },
+  "container": {
+    "selector": "a:has(.product-cat-box-grid)",
+    "type": "css"
+  },
+  "pagination": {
+    "type": "next_button",
+    "selector": "span.page-next-link a",
+    "limit": 5
+  },
+  "fields": [
+    {
+      "name": "Title",
+      "selector": "div.product-cat-box-grid-item-type",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "trim | replace('|','') | normalize"
+    },
+    {
+      "name": "Link",
+      "selector": "",
+      "attr": "href",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Image",
+      "selector": "div.ibox img",
+      "attr": "src",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Price",
+      "selector": "div.product-cat-box-grid-price",
+      "attr": "text",
+      "filter": "number",
+      "formula": ""
+    },
+    {
+      "name": "Status",
+      "selector": "div.in-stock",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "replace('In Stock', '1') | if_num('In Stock', 'Out Of Stock')"
+    }
+  ],
+  "output": {
+    "filename": "BDstall-SSD",
+    "format": "csv"
+  }
+}

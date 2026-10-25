@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "name": "startech_mouse",
+    "url": "https://www.startech.com.bd/accessories/mouse?limit=90"
+  },
+  "container": {
+    "selector": "div.p-item",
+    "type": "css"
+  },
+  "pagination": {
+    "type": "next_button",
+    "selector": "ul.pagination li.active + li a",
+    "limit": 10
+  },
+  "fields": [
+    {
+      "name": "Title",
+      "selector": "h4.p-item-name a",
+      "attr": "text",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Link",
+      "selector": "h4.p-item-name a",
+      "attr": "href",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Image",
+      "selector": "div.p-item-img a img",
+      "attr": "src",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Price",
+      "selector": "div.p-item-price span",
+      "attr": "text",
+      "filter": "number",
+      "formula": ""
+    },
+    {
+      "name": "Status",
+      "selector": "div.p-item-price span",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "if_num('In Stock')"
+    }
+  ],
+  "output": {
+    "filename": "startech_mouse",
+    "format": "csv"
+  }
+}

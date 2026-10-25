@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "name": "Ryans_Monitor",
+    "url": "https://www.ryans.com/category/monitor-all-monitor?limit=100"
+  },
+  "container": {
+    "selector": "div.category-single-product",
+    "type": "css"
+  },
+  "pagination": {
+    "type": "page_loop",
+    "selector": "page",
+    "limit": 4
+  },
+  "fields": [
+    {
+      "name": "Title",
+      "selector": "p.card-text:nth-child(2) a",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "trim | replace('|','')"
+    },
+    {
+      "name": "Link",
+      "selector": "p.card-text a",
+      "attr": "href",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Image",
+      "selector": "div.image-box a img::attr(src)",
+      "attr": "none",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Price",
+      "selector": "a.pr-text",
+      "attr": "text",
+      "filter": "number",
+      "formula": ""
+    },
+    {
+      "name": "Status",
+      "selector": "div.desktop-cart-btn button",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "replace('Add to Cart','In Stock') | trim"
+    }
+  ],
+  "output": {
+    "filename": "Ryans_Monitor",
+    "format": "csv"
+  }
+}

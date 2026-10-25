@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "name": "Potakait-SSD",
+    "url": "https://potakait.com/ssd?limit=1000"
+  },
+  "container": {
+    "selector": "div.product-item",
+    "type": "css"
+  },
+  "pagination": {
+    "type": "next_button",
+    "selector": "ul.pagination li:last-child a",
+    "limit": 10
+  },
+  "fields": [
+    {
+      "name": "Title",
+      "selector": "h4.title a",
+      "attr": "text",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Link",
+      "selector": "h4.title a",
+      "attr": "href",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Image",
+      "selector": "img",
+      "attr": "src",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Price",
+      "selector": "p.price:nth-child(1)",
+      "attr": "text",
+      "filter": "number",
+      "formula": ""
+    },
+    {
+      "name": "Status",
+      "selector": "a.add-to-cart",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "trim | replace('Add to Cart', '1') | if_num('In Stock', 'Out Of Stock')"
+    }
+  ],
+  "output": {
+    "filename": "Potakait-SSD",
+    "format": "csv"
+  }
+}

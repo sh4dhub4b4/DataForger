@@ -1,0 +1,52 @@
+name: Daily TechPulse Hardware Scraper
+
+on:
+  schedule:
+    # 05:00 UTC = 11:00 AM Bangladesh Standard Time (BST, UTC+6)
+    - cron: '0 5 * * *'
+  workflow_dispatch:
+    inputs:
+      category:
+        description: 'Component Category to scrape (e.g., SSD, Processor, Keyboard, or all)'
+        required: true
+        default: 'SSD'
+      max_pages:
+        description: 'Maximum pages per store'
+        required: false
+        default: '2'
+
+concurrency:
+  group: techpulse-scraper
+  cancel-in-progress: false
+
+jobs:
+  scrape-and-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: scraper/go.sum
+
+      - name: Build Scraper Binary
+        working-directory: ./scraper
+        run: |
+          go mod download
+          go build -o scraper-runner .
+
+      - name: Execute Scraper & Push to Supabase
+        working-directory: ./scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://fuzwizxysoqcpucpllku.supabase.co' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1endpenh5c29xY3B1Y3BsbGt1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjkxODAxMiwiZXhwIjoyMTA4NDk0MDEyfQ.MVQYjahpozaqKLuZECQFbwDDJqubyb-s9N46W9kSHzc' }}
+        run: |
+          CATEGORY="${{ github.event.inputs.category || 'SSD' }}"
+          PAGES="${{ github.event.inputs.max_pages || '2' }}"
+          echo "Running Scraper for Category: $CATEGORY with max pages: $PAGES"
+          ./scraper-runner -category "$CATEGORY" -pages "$PAGES"

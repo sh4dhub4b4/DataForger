@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "name": "Ryans_mouse",
+    "url": "https://www.ryans.com/category/desktop-component-mouse?limit=1000"
+  },
+  "container": {
+    "selector": "div.category-single-product",
+    "type": "css"
+  },
+  "pagination": {
+    "type": "page_loop",
+    "selector": "page",
+    "limit": 100
+  },
+  "fields": [
+    {
+      "name": "Title",
+      "selector": "div.text-center span.list-view-text a",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "trim | replace('|','')"
+    },
+    {
+      "name": "Link",
+      "selector": "div.text-center span.list-view-text a",
+      "attr": "href",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Image",
+      "selector": "img",
+      "attr": "src",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Price",
+      "selector": "a.pr-text",
+      "attr": "text",
+      "filter": "number",
+      "formula": ""
+    },
+    {
+      "name": "Status",
+      "selector": "div.desktop-cart-btn button",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "replace('Add to Cart','In Stock') | trim"
+    }
+  ],
+  "output": {
+    "filename": "Ryans_mouse",
+    "format": "csv"
+  }
+}

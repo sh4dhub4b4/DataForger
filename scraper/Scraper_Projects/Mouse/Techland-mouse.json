@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "Name": "Techland-mouse",
+    "URL": "https://www.techlandbd.com/accessories/shop-computer-mouse"
+  },
+  "container": {
+    "Selector": "article.products-list__item",
+    "Type": ""
+  },
+  "fields": [
+    {
+      "Name": "Title",
+      "Selector": "h4 a",
+      "Attr": "text",
+      "Filter": "none"
+    },
+    {
+      "Name": "Link",
+      "Selector": "h4 a",
+      "Attr": "href",
+      "Filter": "none"
+    },
+    {
+      "Name": "Image",
+      "Selector": "img",
+      "Attr": "src",
+      "Filter": "none"
+    },
+    {
+      "Name": "Price",
+      "Selector": "span.text-base",
+      "Attr": "text",
+      "Filter": "number"
+    },
+    {
+      "Name": "Status",
+      "Selector": "div.text-right p",
+      "Attr": "text",
+      "Filter": "none"
+    }
+  ],
+  "pagination": {
+    "Type": "page_loop",
+    "Selector": "",
+    "Limit": 31
+  },
+  "output": {
+    "Filename": "Techland-mouse",
+    "Format": "csv"
+  }
+}

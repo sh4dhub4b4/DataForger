@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "name": "techland-SSD",
+    "url": "https://www.techlandbd.com/pc-components/solid-state-drive"
+  },
+  "container": {
+    "selector": "div.products-list__item",
+    "type": "css"
+  },
+  "pagination": {
+    "type": "page_loop",
+    "selector": "page",
+    "limit": 1
+  },
+  "fields": [
+    {
+      "name": "Title",
+      "selector": "h2.v2-card-title",
+      "attr": "text",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Link",
+      "selector": "a.block",
+      "attr": "href",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Image",
+      "selector": "img",
+      "attr": "src",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Price",
+      "selector": "div.text-red-600",
+      "attr": "text",
+      "filter": "number",
+      "formula": ""
+    },
+    {
+      "name": "Status",
+      "selector": "div.bengali-text",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "trim | if_num('In Stock','In Stock')"
+    }
+  ],
+  "output": {
+    "filename": "SSD-techland",
+    "format": "csv"
+  }
+}
