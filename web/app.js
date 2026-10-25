@@ -615,6 +615,12 @@ function sanitizeUrl(url) {
 
     const parsed = new URL(clean);
     if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      // Ryans enforces Cloudflare Managed Challenge & Same-Origin hotlink protection on all direct image requests.
+      // Route Ryans image assets through Wayback CDN mirror with image resizer for reliable delivery & CORS headers.
+      if (parsed.hostname.toLowerCase().includes("ryans.com")) {
+        const waybackMirror = `https://web.archive.org/web/20260000000000id_/${parsed.toString()}`;
+        return `https://images.weserv.nl/?url=${encodeURIComponent(waybackMirror)}`;
+      }
       return parsed.toString();
     }
     return "";
@@ -640,6 +646,14 @@ function getHardwareCategoryPlaceholder(category) {
 }
 
 function handleImageError(imgEl, category) {
+  const currentSrc = imgEl.src || "";
+  // If a Ryans direct link somehow slipped through or primary proxy had a glitch, attempt fallback mirror before placeholder
+  if (currentSrc.includes("ryans.com") && !currentSrc.includes("web.archive.org")) {
+    const rawUrl = currentSrc.split("?")[0];
+    const waybackMirror = `https://web.archive.org/web/20260000000000id_/${rawUrl}`;
+    imgEl.src = `https://images.weserv.nl/?url=${encodeURIComponent(waybackMirror)}`;
+    return;
+  }
   imgEl.onerror = null;
   imgEl.removeAttribute("crossorigin");
   imgEl.src = getHardwareCategoryPlaceholder(category);
