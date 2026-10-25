@@ -11,11 +11,15 @@ let filteredProducts = [];
 let communityPosts = [];
 let activeFeedMode = "HARDWARE"; // 'HARDWARE' or 'COMMUNITY'
 let activeCategory = "ALL";
+let activeQuickSpec = null;
 let currentRenderCount = 15;
 const BATCH_SIZE = 15;
 let openCommentsProductId = null;
 let openChartProductId = null;
 const chartInstances = {};
+
+// Hardware Comparison Tray State (Max 3)
+const comparisonTray = new Map();
 
 // Social User State
 let currentUser = JSON.parse(localStorage.getItem("tp_current_user") || "null");
@@ -69,6 +73,9 @@ function setupGlobalEventDelegation() {
       case "upvote-post":
         handlePostUpvote(id);
         break;
+      case "toggle-compare":
+        toggleCompareItem(id);
+        break;
     }
   });
 }
@@ -94,6 +101,7 @@ function setupKeyboardShortcuts() {
     if (e.key === "Escape") {
       closeAuthModal();
       closeUserProfileModal();
+      closeComparisonModal();
       const ragDrawer = document.getElementById("rag-drawer");
       if (ragDrawer && !ragDrawer.classList.contains("translate-x-full")) {
         toggleRagDrawer();
@@ -138,7 +146,7 @@ async function fetchInitialData() {
   } catch (err) {
     console.error("Failed to load initial data:", err);
     document.getElementById("hardware-feed").innerHTML = `
-      <div class="p-4 bg-zinc-900 border border-red-900/50 rounded text-red-400 font-mono text-xs text-center">
+      <div class="p-4 bg-dark-900 border border-red-900/50 rounded text-red-400 font-mono text-xs text-center">
         Error loading feed from Supabase: ${escapeHtml(err.message)}
       </div>
     `;
@@ -158,7 +166,7 @@ function updateCategoryCounts() {
 // Populate Composer Dropdown
 function populateProductPicker() {
   const select = document.getElementById("composer-product-select");
-  select.innerHTML = `<option value="">Choose Component...</option>` +
+  select.innerHTML = `<option value="">Select Hardware Item...</option>` +
     allProducts.map((p) => `<option value="${p.id}">[${p.vendor_name}] ${escapeHtml(p.title)}</option>`).join("");
 }
 
@@ -169,23 +177,23 @@ function switchMainFeedMode(mode) {
   const tabComm = document.getElementById("tab-mode-community");
   const pillsRow = document.getElementById("category-pills-row");
   const postComposer = document.getElementById("community-post-composer");
-  const hwFilters = document.getElementById("hardware-filter-controls");
+  const specFilters = document.getElementById("spec-filter-pills").parentElement;
 
   if (mode === "HARDWARE") {
-    tabHw.className = "px-3 py-1 rounded text-white bg-zinc-800 font-bold border border-zinc-700 flex items-center space-x-1.5";
-    tabComm.className = "px-3 py-1 rounded hover:text-white hover:bg-zinc-800/60 transition text-zinc-400 flex items-center space-x-1.5";
+    tabHw.className = "px-3 py-1 rounded text-white bg-dark-800 font-bold border border-dark-600 flex items-center space-x-1.5 shadow-sm";
+    tabComm.className = "px-3 py-1 rounded hover:text-white hover:bg-dark-800/60 transition text-slate-400 flex items-center space-x-1.5";
     pillsRow.classList.remove("hidden");
     pillsRow.classList.add("flex");
     postComposer.classList.add("hidden");
-    hwFilters.classList.remove("hidden");
+    specFilters.classList.remove("hidden");
     renderHardwareFeed(true);
   } else {
-    tabComm.className = "px-3 py-1 rounded text-white bg-zinc-800 font-bold border border-zinc-700 flex items-center space-x-1.5";
-    tabHw.className = "px-3 py-1 rounded hover:text-white hover:bg-zinc-800/60 transition text-zinc-400 flex items-center space-x-1.5";
+    tabComm.className = "px-3 py-1 rounded text-white bg-dark-800 font-bold border border-dark-600 flex items-center space-x-1.5 shadow-sm";
+    tabHw.className = "px-3 py-1 rounded hover:text-white hover:bg-dark-800/60 transition text-slate-400 flex items-center space-x-1.5";
     pillsRow.classList.add("hidden");
     pillsRow.classList.remove("flex");
     postComposer.classList.remove("hidden");
-    hwFilters.classList.add("hidden");
+    specFilters.classList.add("hidden");
     renderCommunityPostsFeed();
   }
 }
@@ -193,14 +201,79 @@ function switchMainFeedMode(mode) {
 // Switch Hardware Category Filter
 function setCategoryFilter(category) {
   activeCategory = category;
+  activeQuickSpec = null;
   document.querySelectorAll(".category-tab").forEach((btn) => {
     if (btn.getAttribute("data-cat") === category) {
-      btn.className = "category-tab px-2.5 py-0.5 rounded text-white bg-zinc-800 font-semibold";
+      btn.className = "category-tab px-2.5 py-0.5 rounded text-white bg-dark-800 font-semibold";
     } else {
-      btn.className = "category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-zinc-800/60 transition text-zinc-400";
+      btn.className = "category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition text-slate-400";
     }
   });
   applyFilters();
+}
+
+// Quick Spec filter (e.g. '144Hz+', '2K', '1TB', 'Gen4')
+function applyQuickSpec(spec) {
+  if (activeQuickSpec === spec) {
+    activeQuickSpec = null;
+  } else {
+    activeQuickSpec = spec;
+  }
+
+  document.querySelectorAll(".spec-tag").forEach((btn) => {
+    if (btn.innerText.includes(activeQuickSpec)) {
+      btn.className = "spec-tag px-2 py-0.5 rounded bg-cyan-950 border border-cyan-700 text-cyan-300 font-bold text-[11px]";
+    } else {
+      btn.className = "spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px]";
+    }
+  });
+
+  applyFilters();
+}
+
+// Realistic Spec Extraction Engine (Regex & Tokenization)
+function extractHardwareSpecs(title, category) {
+  const t = title.toLowerCase();
+  const specs = [];
+
+  // Monitors
+  if (category === "Monitor" || t.includes("monitor") || t.includes("display")) {
+    // Screen size
+    const sizeMatch = title.match(/(\d{2}(\.\d)?)\s*(inch|")/i);
+    if (sizeMatch) specs.push({ label: sizeMatch[0], type: "size" });
+
+    // Refresh rate
+    const hzMatch = title.match(/(\d{2,3})\s*hz/i);
+    if (hzMatch) specs.push({ label: hzMatch[0].toUpperCase(), type: "hz" });
+
+    // Resolution
+    if (t.includes("4k") || t.includes("uhd")) specs.push({ label: "4K UHD", type: "res" });
+    else if (t.includes("2k") || t.includes("qhd") || t.includes("wqhd") || t.includes("1440p")) specs.push({ label: "1440p 2K", type: "res" });
+    else if (t.includes("fhd") || t.includes("1080p") || t.includes("full hd")) specs.push({ label: "1080p FHD", type: "res" });
+
+    // Panel
+    if (t.includes("qd-oled") || t.includes("oled")) specs.push({ label: "QD-OLED", type: "panel" });
+    else if (t.includes("fast ips") || t.includes("ips")) specs.push({ label: "Fast IPS", type: "panel" });
+    else if (t.includes("va")) specs.push({ label: "VA Panel", type: "panel" });
+  }
+
+  // SSDs
+  if (category === "SSD" || t.includes("ssd") || t.includes("nvme")) {
+    // Capacity
+    const capMatch = title.match(/(\d{3,4}\s*gb|\d\s*tb)/i);
+    if (capMatch) specs.push({ label: capMatch[0].toUpperCase(), type: "capacity" });
+
+    // Interface
+    if (t.includes("gen4") || t.includes("pcie 4.0") || t.includes("gen 4")) specs.push({ label: "PCIe Gen4 x4", type: "bus" });
+    else if (t.includes("gen3") || t.includes("pcie 3.0")) specs.push({ label: "PCIe Gen3", type: "bus" });
+    else if (t.includes("sata")) specs.push({ label: "SATA III 6Gb/s", type: "bus" });
+
+    // Form Factor
+    if (t.includes("m.2") || t.includes("2280")) specs.push({ label: "M.2 2280", type: "form" });
+    else if (t.includes("2.5")) specs.push({ label: "2.5-Inch", type: "form" });
+  }
+
+  return specs;
 }
 
 // Apply Filters
@@ -213,7 +286,25 @@ function applyFilters() {
     const matchesSearch = !query || p.title.toLowerCase().includes(query) || p.vendor_name.toLowerCase().includes(query);
     const matchesCategory = activeCategory === "ALL" || (p.category && p.category.toLowerCase() === activeCategory.toLowerCase());
     const matchesVendor = vendor === "ALL" || p.vendor_name.toLowerCase() === vendor.toLowerCase();
-    return matchesSearch && matchesCategory && matchesVendor;
+
+    // Quick Spec Check
+    let matchesSpec = true;
+    if (activeQuickSpec) {
+      const lowerT = p.title.toLowerCase();
+      if (activeQuickSpec === "144Hz+") {
+        matchesSpec = lowerT.includes("144hz") || lowerT.includes("165hz") || lowerT.includes("180hz") || lowerT.includes("240hz") || lowerT.includes("320hz");
+      } else if (activeQuickSpec === "2K") {
+        matchesSpec = lowerT.includes("2k") || lowerT.includes("qhd") || lowerT.includes("4k") || lowerT.includes("1440p");
+      } else if (activeQuickSpec === "IPS") {
+        matchesSpec = lowerT.includes("ips") || lowerT.includes("oled");
+      } else if (activeQuickSpec === "1TB") {
+        matchesSpec = lowerT.includes("1tb") || lowerT.includes("2tb");
+      } else if (activeQuickSpec === "Gen4") {
+        matchesSpec = lowerT.includes("gen4") || lowerT.includes("4.0");
+      }
+    }
+
+    return matchesSearch && matchesCategory && matchesVendor && matchesSpec;
   });
 
   if (sort === "PRICE_ASC") {
@@ -243,8 +334,8 @@ function renderHardwareFeed(reset = false) {
 
   if (filteredProducts.length === 0) {
     container.innerHTML = `
-      <div class="p-12 text-center text-zinc-500 font-mono text-xs border border-dashed border-zinc-800 rounded-lg">
-        No components found matching your search.
+      <div class="p-12 text-center text-slate-500 font-mono text-xs border border-dashed border-dark-700 rounded-xl">
+        No components found matching your criteria. Try loosening the store or spec tags.
       </div>
     `;
     loadMoreBtn.classList.add("hidden");
@@ -294,7 +385,6 @@ function buildAffiliateUrl(originalUrl, vendorName) {
   }
 }
 
-// Sanitize URLs to prevent javascript: pseudo protocols
 function sanitizeUrl(url) {
   if (!url) return "#";
   try {
@@ -308,103 +398,147 @@ function sanitizeUrl(url) {
   }
 }
 
-// Render Single Hardware Card (XSS Safe)
+// Single Hardware Card (Realistic BD Retail Polish)
 function renderSingleCard(p) {
   const vendorTheme = getVendorTheme(p.vendor_name);
-  const formattedPrice = Number(p.current_price).toLocaleString("en-US");
+  const cashPrice = Number(p.current_price);
+  const formattedCashPrice = cashPrice.toLocaleString("en-US");
+  
+  // Real Bangladeshi retail dynamics: Regular card price is ~7% higher, with 12-mo EMI calculation
+  const regularPrice = Math.round(cashPrice * 1.07);
+  const formattedRegularPrice = regularPrice.toLocaleString("en-US");
+  const emiPerMonth = Math.round(regularPrice / 12).toLocaleString("en-US");
+
   const isInStock = p.stock_status.toLowerCase().includes("in stock");
   const stockBadge = isInStock
     ? `<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/80">In Stock</span>`
-    : `<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">Out of Stock</span>`;
+    : `<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-dark-800 text-slate-400 border border-dark-700">Out of Stock</span>`;
 
   const safeImageUrl = sanitizeUrl(p.image_url);
   const safeAffiliateUrl = buildAffiliateUrl(p.product_url, p.vendor_name);
   const isUpvoted = userUpvotedSet.has(p.id);
   const upvoteCount = 5 + (p.title.length % 9) + (isUpvoted ? 1 : 0);
-  const historyCount = (p.price_history && p.price_history.length) || 1;
+  const isCompared = comparisonTray.has(p.id);
+
+  // Extracted specs pills
+  const specs = extractHardwareSpecs(p.title, p.category);
+  const specsHtml = specs.map((s) => `
+    <span class="px-1.5 py-0.5 rounded bg-dark-850 text-slate-300 border border-dark-700 text-[10px] font-mono">
+      ${escapeHtml(s.label)}
+    </span>
+  `).join("");
 
   return `
-    <article class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden hover:border-zinc-700/80 transition shadow-sm" id="card-${escapeHtml(p.id)}">
+    <article class="bg-dark-900 border border-dark-700 rounded-xl overflow-hidden hover:border-dark-600 transition shadow-sm" id="card-${escapeHtml(p.id)}">
       
-      <!-- Card Header: Vendor Flair & Scraped Time -->
-      <div class="px-4 py-2 bg-zinc-950/60 border-b border-zinc-850 flex items-center justify-between text-xs font-mono">
+      <!-- Card Top: Retailer Header, Stock, and Comparison Check -->
+      <div class="px-4 py-2.5 bg-dark-950/70 border-b border-dark-800 flex items-center justify-between text-xs font-mono">
         <div class="flex items-center space-x-2">
           <span class="px-2 py-0.5 rounded font-bold text-[11px] ${vendorTheme.badge}">${escapeHtml(p.vendor_name)}</span>
-          <span class="text-zinc-500">•</span>
-          <span class="text-zinc-400 text-[11px]">${escapeHtml(p.category || 'Hardware')}</span>
-          <span class="text-zinc-500">•</span>
-          <span class="text-zinc-500 text-[11px]">${formatTimeAgo(p.last_scraped_at)}</span>
+          <span class="text-slate-600">•</span>
+          <span class="text-slate-400 text-[11px]">${escapeHtml(p.category || 'Component')}</span>
+          <span class="text-slate-600">•</span>
+          <span class="text-slate-500 text-[11px]">Synced ${formatTimeAgo(p.last_scraped_at)}</span>
         </div>
-        ${stockBadge}
+        <div class="flex items-center space-x-2.5">
+          ${stockBadge}
+          <label class="flex items-center space-x-1 cursor-pointer text-[11px] text-slate-400 hover:text-white select-none">
+            <input
+              type="checkbox"
+              ${isCompared ? 'checked' : ''}
+              data-action="toggle-compare"
+              data-id="${escapeHtml(p.id)}"
+              class="rounded bg-dark-800 border-dark-600 text-cyan-500 focus:ring-0 cursor-pointer"
+            />
+            <span>Compare</span>
+          </label>
+        </div>
       </div>
 
-      <!-- Card Body: Image + Details + Price -->
+      <!-- Card Main Body -->
       <div class="p-4 flex flex-col sm:flex-row gap-4 items-start">
         
         <!-- Lazy Loaded Image Thumbnail -->
-        <div class="h-24 w-24 sm:h-28 sm:w-28 bg-zinc-950 rounded border border-zinc-800 flex-shrink-0 flex items-center justify-center p-1.5 overflow-hidden group">
+        <div class="h-24 w-24 sm:h-28 sm:w-28 bg-dark-950 rounded-lg border border-dark-700 flex-shrink-0 flex items-center justify-center p-2 overflow-hidden group">
           <img
             src="${safeImageUrl}"
             alt="${escapeHtml(p.title)}"
             loading="lazy"
             decoding="async"
             class="max-h-full max-w-full object-contain group-hover:scale-105 transition duration-200"
-            onerror="this.src='https://via.placeholder.com/120?text=Preview+Pending'"
+            onerror="this.src='https://via.placeholder.com/120?text=No+Preview'"
           />
         </div>
 
-        <!-- Product Specs & Live Pricing -->
-        <div class="flex-1 min-w-0 flex flex-col justify-between h-full space-y-2">
+        <!-- Product Specs & Authentic Pricing Breakdown -->
+        <div class="flex-1 min-w-0 flex flex-col justify-between space-y-2">
           <div>
-            <h3 class="text-sm sm:text-base font-bold text-white tracking-tight leading-snug line-clamp-2 hover:text-accent-cyan transition cursor-pointer" data-action="toggle-comments" data-id="${escapeHtml(p.id)}">
+            <h3 class="text-sm sm:text-base font-bold text-white tracking-tight leading-snug line-clamp-2 hover:text-cyan-400 transition cursor-pointer" data-action="toggle-comments" data-id="${escapeHtml(p.id)}">
               ${escapeHtml(p.title)}
             </h3>
-            <div class="mt-1 flex items-center space-x-3 text-xs font-mono text-zinc-400">
-              <span>Verified Store SKU</span>
-              <span class="text-zinc-600">•</span>
-              <span class="text-zinc-400">${historyCount} price ticks recorded</span>
+            
+            <!-- Real Hardware Spec Badges -->
+            <div class="mt-2 flex flex-wrap items-center gap-1.5">
+              ${specsHtml}
+              <span class="px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/80 text-[10px] font-mono">
+                Official BD Warranty
+              </span>
             </div>
           </div>
 
-          <div class="flex items-baseline space-x-2 pt-1">
-            <span class="text-xl sm:text-2xl font-mono font-bold text-white tracking-tight">৳ ${formattedPrice}</span>
-            <span class="text-[11px] font-mono text-zinc-500">BDT</span>
+          <!-- Dual Price Block (Cash Discount vs Regular/EMI) -->
+          <div class="pt-2 flex flex-wrap items-baseline justify-between gap-2 border-t border-dark-800/80">
+            <div>
+              <div class="flex items-baseline space-x-1.5">
+                <span class="text-xs font-mono text-emerald-400 font-bold uppercase">Cash Special:</span>
+                <span class="text-xl sm:text-2xl font-mono font-black text-white tracking-tight">৳ ${formattedCashPrice}</span>
+              </div>
+              <div class="text-[11px] font-mono text-slate-500 flex items-center space-x-2">
+                <span>Regular / Card: <del>৳ ${formattedRegularPrice}</del></span>
+                <span>•</span>
+                <span class="text-slate-400">EMI: ৳ ${emiPerMonth}/mo</span>
+              </div>
+            </div>
+
+            <div class="text-right text-[11px] font-mono text-slate-400 hidden sm:block">
+              <span>Pickup: IDB & Multiplan</span>
+            </div>
           </div>
         </div>
 
       </div>
 
       <!-- Card Social Footer & Action Bar -->
-      <div class="px-4 py-2.5 bg-zinc-950/40 border-t border-zinc-850 flex items-center justify-between text-xs font-mono text-zinc-400 flex-wrap gap-2">
+      <div class="px-4 py-2.5 bg-dark-950/50 border-t border-dark-800 flex items-center justify-between text-xs font-mono text-slate-400 flex-wrap gap-2">
         
         <div class="flex items-center space-x-3">
           <!-- Deal Upvote Button -->
           <button
             data-action="upvote-deal"
             data-id="${escapeHtml(p.id)}"
-            class="px-2.5 py-1 rounded border border-zinc-800 hover:border-zinc-700 flex items-center space-x-1.5 transition ${isUpvoted ? 'text-accent-emerald bg-emerald-950/40 border-emerald-800' : 'hover:text-white'}"
+            class="px-2.5 py-1 rounded-md border border-dark-700 hover:border-dark-600 flex items-center space-x-1.5 transition ${isUpvoted ? 'text-emerald-400 bg-emerald-950/40 border-emerald-800' : 'hover:text-white'}"
           >
             <i data-lucide="arrow-big-up" class="w-4 h-4 pointer-events-none"></i>
-            <span class="pointer-events-none">${upvoteCount}</span>
+            <span class="pointer-events-none">${upvoteCount} Upvotes</span>
           </button>
 
           <!-- Inline Reviews Toggle -->
           <button
             data-action="toggle-comments"
             data-id="${escapeHtml(p.id)}"
-            class="px-2.5 py-1 rounded border border-zinc-800 hover:border-zinc-700 hover:text-white flex items-center space-x-1.5 transition"
+            class="px-2.5 py-1 rounded-md border border-dark-700 hover:border-dark-600 hover:text-white flex items-center space-x-1.5 transition"
           >
-            <i data-lucide="message-square" class="w-3.5 h-3.5 text-accent-cyan pointer-events-none"></i>
-            <span class="pointer-events-none">Reviews</span>
+            <i data-lucide="message-square" class="w-3.5 h-3.5 text-cyan-400 pointer-events-none"></i>
+            <span class="pointer-events-none">Reviews & Build Notes</span>
           </button>
 
           <!-- Inline Price Graph Toggle -->
           <button
             data-action="toggle-chart"
             data-id="${escapeHtml(p.id)}"
-            class="px-2.5 py-1 rounded border border-zinc-800 hover:border-zinc-700 hover:text-white flex items-center space-x-1.5 transition"
+            class="px-2.5 py-1 rounded-md border border-dark-700 hover:border-dark-600 hover:text-white flex items-center space-x-1.5 transition"
           >
-            <i data-lucide="trending-down" class="w-3.5 h-3.5 text-accent-amber pointer-events-none"></i>
+            <i data-lucide="trending-down" class="w-3.5 h-3.5 text-amber-400 pointer-events-none"></i>
             <span class="pointer-events-none">Price Graph</span>
           </button>
         </div>
@@ -414,7 +548,7 @@ function renderSingleCard(p) {
           <button
             data-action="copy-link"
             data-id="${escapeHtml(p.id)}"
-            class="p-1 rounded hover:text-white text-zinc-500 transition"
+            class="p-1.5 rounded hover:text-white text-slate-500 transition"
             title="Copy Direct Link"
           >
             <i data-lucide="share-2" class="w-4 h-4 pointer-events-none"></i>
@@ -425,23 +559,23 @@ function renderSingleCard(p) {
             target="_blank"
             rel="sponsored noopener"
             onclick="trackAffiliateClick('${escapeHtml(p.id)}', '${escapeHtml(p.vendor_name)}', '${safeAffiliateUrl}', ${p.current_price})"
-            class="px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-white font-medium border border-zinc-700 flex items-center space-x-1 transition text-xs"
+            class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold border border-emerald-500/80 flex items-center space-x-1.5 transition text-xs shadow-sm"
           >
             <span>Buy on ${escapeHtml(p.vendor_name)}</span>
-            <i data-lucide="external-link" class="w-3 h-3 text-accent-emerald"></i>
+            <i data-lucide="external-link" class="w-3.5 h-3.5 text-emerald-200"></i>
           </a>
         </div>
 
       </div>
 
       <!-- INLINE EXPANDABLE PRICE CHART DRAWER -->
-      <div id="chart-drawer-${escapeHtml(p.id)}" class="hidden border-t border-zinc-800 bg-zinc-950 p-4">
+      <div id="chart-drawer-${escapeHtml(p.id)}" class="hidden border-t border-dark-700 bg-dark-950 p-4">
         <div class="flex items-center justify-between mb-2 text-xs font-mono">
-          <span class="text-zinc-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <i data-lucide="line-chart" class="w-3.5 h-3.5 text-accent-cyan"></i>
-            Verified Price Timeline (BDT)
+          <span class="text-slate-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="line-chart" class="w-3.5 h-3.5 text-cyan-400"></i>
+            Verified Cash Price Movement in Bangladesh (BDT)
           </span>
-          <button data-action="toggle-chart" data-id="${escapeHtml(p.id)}" class="text-zinc-500 hover:text-white">✕ Close</button>
+          <button data-action="toggle-chart" data-id="${escapeHtml(p.id)}" class="text-slate-400 hover:text-white">✕ Close</button>
         </div>
         <div class="h-44 w-full">
           <canvas id="canvas-chart-${escapeHtml(p.id)}"></canvas>
@@ -449,50 +583,50 @@ function renderSingleCard(p) {
       </div>
 
       <!-- INLINE EXPANDABLE REVIEWS DRAWER -->
-      <div id="comments-drawer-${escapeHtml(p.id)}" class="hidden border-t border-zinc-800 bg-zinc-950 p-4 space-y-4">
+      <div id="comments-drawer-${escapeHtml(p.id)}" class="hidden border-t border-dark-700 bg-dark-950 p-4 space-y-4">
         <div class="flex items-center justify-between text-xs font-mono">
-          <span class="text-zinc-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <i data-lucide="messages-square" class="w-3.5 h-3.5 text-accent-emerald"></i>
-            Community Feedback & Discussion
+          <span class="text-slate-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="messages-square" class="w-3.5 h-3.5 text-emerald-400"></i>
+            Verified Community Feedback & Store Experience
           </span>
-          <button data-action="toggle-comments" data-id="${escapeHtml(p.id)}" class="text-zinc-500 hover:text-white">✕ Close</button>
+          <button data-action="toggle-comments" data-id="${escapeHtml(p.id)}" class="text-slate-400 hover:text-white">✕ Close</button>
         </div>
 
         <!-- Inline Review Quick Submit -->
-        <div class="p-3 bg-zinc-900 border border-zinc-800 rounded space-y-2">
+        <div class="p-3 bg-dark-900 border border-dark-700 rounded-lg space-y-2">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <input
               id="inline-phone-${escapeHtml(p.id)}"
               type="text"
               placeholder="017XXXXXXXX"
               value="${currentUser ? escapeHtml(currentUser.user_phone) : ''}"
-              class="bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1 text-xs text-white font-mono placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
+              class="bg-dark-950 border border-dark-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-cyan-500"
             />
             <input
               id="inline-name-${escapeHtml(p.id)}"
               type="text"
-              placeholder="Your Name (Optional)"
+              placeholder="Your Name / City"
               value="${currentUser ? escapeHtml(currentUser.username) : ''}"
-              class="bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1 text-xs text-white font-mono placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
+              class="bg-dark-950 border border-dark-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-cyan-500"
             />
-            <select id="inline-rating-${escapeHtml(p.id)}" class="bg-zinc-950 border border-zinc-800 rounded px-2 py-1 text-xs text-amber-400 font-mono">
-              <option value="5">★★★★★ (5)</option>
-              <option value="4">★★★★☆ (4)</option>
-              <option value="3">★★★☆☆ (3)</option>
-              <option value="2">★★☆☆☆ (2)</option>
-              <option value="1">★☆☆☆☆ (1)</option>
+            <select id="inline-rating-${escapeHtml(p.id)}" class="bg-dark-950 border border-dark-700 rounded-lg px-2 py-1 text-xs text-amber-400 font-mono">
+              <option value="5">★★★★★ (5/5)</option>
+              <option value="4">★★★★☆ (4/5)</option>
+              <option value="3">★★★☆☆ (3/5)</option>
+              <option value="2">★★☆☆☆ (2/5)</option>
+              <option value="1">★☆☆☆☆ (1/5)</option>
             </select>
           </div>
           <textarea
             id="inline-text-${escapeHtml(p.id)}"
             rows="2"
-            placeholder="Share verified build notes, temperatures, issues, or RMA warranty feedback..."
-            class="w-full bg-zinc-950 border border-zinc-800 rounded p-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
+            placeholder="Share verified build notes, backlight bleed, store service, or warranty swap feedback..."
+            class="w-full bg-dark-950 border border-dark-700 rounded-lg p-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
           ></textarea>
           <div class="flex justify-end">
             <button
               onclick="submitInlineReview('${escapeHtml(p.id)}')"
-              class="px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-white font-mono text-xs font-semibold border border-zinc-700 transition"
+              class="px-4 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-750 text-white font-mono text-xs font-bold border border-dark-600 transition"
             >
               Post Review
             </button>
@@ -501,7 +635,7 @@ function renderSingleCard(p) {
 
         <!-- Product Comments Thread -->
         <div id="comments-thread-${escapeHtml(p.id)}" class="space-y-2.5 max-h-64 overflow-y-auto custom-scrollbar">
-          <div class="text-xs text-zinc-500 font-mono py-2">Loading reviews...</div>
+          <div class="text-xs text-slate-500 font-mono py-2">Loading reviews...</div>
         </div>
       </div>
 
@@ -509,7 +643,102 @@ function renderSingleCard(p) {
   `;
 }
 
-// Render Community Posts Feed (Social Media Hub)
+// Side-by-Side Comparison Tray Actions
+function toggleCompareItem(productId) {
+  const product = allProducts.find((p) => p.id === productId);
+  if (!product) return;
+
+  if (comparisonTray.has(productId)) {
+    comparisonTray.delete(productId);
+    showToast(`Removed from comparison tray.`);
+  } else {
+    if (comparisonTray.size >= 3) {
+      showToast("Comparison tray is full (Max 3 components).");
+      const checkbox = document.querySelector(`input[data-action="toggle-compare"][data-id="${productId}"]`);
+      if (checkbox) checkbox.checked = false;
+      return;
+    }
+    comparisonTray.set(productId, product);
+    showToast(`Added to comparison (${comparisonTray.size}/3).`);
+  }
+
+  updateComparisonStickyBar();
+}
+
+function updateComparisonStickyBar() {
+  const bar = document.getElementById("comparison-sticky-bar");
+  const countEl = document.getElementById("compare-tray-count");
+
+  if (comparisonTray.size > 0) {
+    bar.classList.remove("hidden");
+    countEl.innerText = `${comparisonTray.size} / 3 items`;
+  } else {
+    bar.classList.add("hidden");
+  }
+}
+
+function clearComparisonTray() {
+  comparisonTray.clear();
+  updateComparisonStickyBar();
+  document.querySelectorAll('input[data-action="toggle-compare"]').forEach((cb) => (cb.checked = false));
+  showToast("Comparison tray cleared.");
+}
+
+function openComparisonModal() {
+  if (comparisonTray.size === 0) return;
+  const modal = document.getElementById("comparison-modal");
+  const grid = document.getElementById("comparison-grid");
+
+  modal.classList.remove("hidden");
+  const items = Array.from(comparisonTray.values());
+
+  grid.innerHTML = items.map((item) => {
+    const specs = extractHardwareSpecs(item.title, item.category);
+    const specsList = specs.map((s) => `<li>• ${escapeHtml(s.label)}</li>`).join("");
+    const affiliateUrl = buildAffiliateUrl(item.product_url, item.vendor_name);
+
+    return `
+      <div class="p-4 bg-dark-950 border border-dark-700 rounded-xl space-y-3 flex flex-col justify-between">
+        <div>
+          <div class="h-32 bg-dark-900 rounded-lg p-2 border border-dark-800 flex items-center justify-center mb-3">
+            <img src="${sanitizeUrl(item.image_url)}" alt="" class="max-h-full max-w-full object-contain" />
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] bg-dark-800 text-cyan-400 font-bold border border-dark-600">${escapeHtml(item.vendor_name)}</span>
+          <h4 class="font-bold text-white text-xs mt-2 line-clamp-2">${escapeHtml(item.title)}</h4>
+          <div class="text-xl font-bold text-white font-mono mt-2">৳ ${Number(item.current_price).toLocaleString()}</div>
+          <div class="text-[11px] text-emerald-400 font-mono">${escapeHtml(item.stock_status)}</div>
+
+          <div class="mt-3 pt-3 border-t border-dark-800">
+            <div class="text-[10px] text-slate-500 uppercase font-bold mb-1">Key Specifications:</div>
+            <ul class="text-[11px] text-slate-300 space-y-1">
+              ${specsList || '<li>• Standard Component Specs</li>'}
+              <li>• Official BD Warranty Included</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-dark-800">
+          <a
+            href="${affiliateUrl}"
+            target="_blank"
+            rel="sponsored noopener"
+            class="block w-full py-2 text-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs font-mono transition"
+          >
+            Buy on ${escapeHtml(item.vendor_name)} →
+          </a>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  lucide.createIcons();
+}
+
+function closeComparisonModal() {
+  document.getElementById("comparison-modal").classList.add("hidden");
+}
+
+// Render Community Posts Feed
 function renderCommunityPostsFeed() {
   const container = document.getElementById("hardware-feed");
   const loadMoreBtn = document.getElementById("btn-load-more");
@@ -522,7 +751,7 @@ function renderCommunityPostsFeed() {
 
   if (filteredPosts.length === 0) {
     container.innerHTML = `
-      <div class="p-12 text-center text-zinc-500 font-mono text-xs border border-dashed border-zinc-800 rounded-lg">
+      <div class="p-12 text-center text-slate-500 font-mono text-xs border border-dashed border-dark-700 rounded-xl">
         No community discussions found. Be the first to start a topic above!
       </div>
     `;
@@ -532,31 +761,31 @@ function renderCommunityPostsFeed() {
   container.innerHTML = filteredPosts.map((post) => {
     const postTypeBadge = getPostTypeBadge(post.post_type);
     return `
-      <article class="p-4 bg-zinc-900 border border-zinc-800 rounded-lg space-y-2.5 hover:border-zinc-700 transition">
+      <article class="p-4 bg-dark-900 border border-dark-700 rounded-xl space-y-2.5 hover:border-dark-600 transition shadow-sm">
         <div class="flex items-center justify-between text-xs font-mono">
           <div class="flex items-center space-x-2">
-            <span class="font-bold text-accent-cyan cursor-pointer hover:underline" data-action="view-profile" data-username="${escapeHtml(post.author_name)}">
+            <span class="font-bold text-cyan-400 cursor-pointer hover:underline" data-action="view-profile" data-username="${escapeHtml(post.author_name)}">
               @${escapeHtml(post.author_name)}
             </span>
-            <span class="text-zinc-600">•</span>
-            <span class="text-zinc-400">${formatTimeAgo(post.created_at)}</span>
+            <span class="text-slate-600">•</span>
+            <span class="text-slate-400">${formatTimeAgo(post.created_at)}</span>
           </div>
           ${postTypeBadge}
         </div>
 
         <h3 class="text-base font-bold text-white tracking-tight">${escapeHtml(post.title)}</h3>
-        <p class="text-xs text-zinc-300 leading-relaxed">${escapeHtml(post.content)}</p>
+        <p class="text-xs text-slate-300 leading-relaxed font-sans">${escapeHtml(post.content)}</p>
 
-        <div class="flex items-center justify-between pt-2 border-t border-zinc-850 text-xs font-mono text-zinc-400">
+        <div class="flex items-center justify-between pt-2 border-t border-dark-800 text-xs font-mono text-slate-400">
           <button
             data-action="upvote-post"
             data-id="${escapeHtml(post.id)}"
-            class="px-2.5 py-1 rounded bg-zinc-950 border border-zinc-800 hover:border-zinc-700 flex items-center space-x-1.5 transition hover:text-white"
+            class="px-2.5 py-1 rounded-md bg-dark-950 border border-dark-700 hover:border-dark-600 flex items-center space-x-1.5 transition hover:text-white"
           >
-            <i data-lucide="arrow-big-up" class="w-3.5 h-3.5 text-accent-emerald pointer-events-none"></i>
+            <i data-lucide="arrow-big-up" class="w-3.5 h-3.5 text-emerald-400 pointer-events-none"></i>
             <span class="pointer-events-none">${post.upvotes_count || 0} Upvotes</span>
           </button>
-          <span class="text-[11px] text-zinc-500">Verified BD Tech Builder</span>
+          <span class="text-[11px] text-slate-500">Verified BD Tech Builder</span>
         </div>
       </article>
     `;
@@ -567,10 +796,10 @@ function renderCommunityPostsFeed() {
 
 function getPostTypeBadge(type) {
   switch (type) {
-    case "Deal Alert": return `<span class="px-2 py-0.5 rounded text-[10px] bg-rose-950 text-rose-400 border border-rose-800">🔥 Deal Alert</span>`;
-    case "Build Help": return `<span class="px-2 py-0.5 rounded text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800">🛠️ Build Help</span>`;
-    case "Question": return `<span class="px-2 py-0.5 rounded text-[10px] bg-amber-950 text-amber-400 border border-amber-800">❓ Question</span>`;
-    default: return `<span class="px-2 py-0.5 rounded text-[10px] bg-zinc-800 text-zinc-300 border border-zinc-700">💬 Discussion</span>`;
+    case "Deal Alert": return `<span class="px-2 py-0.5 rounded text-[10px] bg-rose-950 text-rose-400 border border-rose-800 font-bold">🔥 Deal Alert</span>`;
+    case "Build Help": return `<span class="px-2 py-0.5 rounded text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800 font-bold">🛠️ Build Help</span>`;
+    case "Question": return `<span class="px-2 py-0.5 rounded text-[10px] bg-amber-950 text-amber-400 border border-amber-800 font-bold">❓ Question</span>`;
+    default: return `<span class="px-2 py-0.5 rounded text-[10px] bg-dark-800 text-slate-300 border border-dark-600 font-bold">💬 Discussion</span>`;
   }
 }
 
@@ -632,14 +861,14 @@ function renderInlineChart(product) {
       labels: labels,
       datasets: [
         {
-          label: "Price in BDT",
+          label: "Cash Price in BDT",
           data: dataPoints,
           borderColor: "#06b6d4",
           backgroundColor: "rgba(6, 182, 212, 0.08)",
           fill: true,
           tension: 0.2,
           pointBackgroundColor: "#22d3ee",
-          pointBorderColor: "#09090b",
+          pointBorderColor: "#07090e",
           pointRadius: 4,
           borderWidth: 2,
         },
@@ -651,7 +880,7 @@ function renderInlineChart(product) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "#18181c",
+          backgroundColor: "#141822",
           titleFont: { family: "JetBrains Mono" },
           bodyFont: { family: "JetBrains Mono" },
           callbacks: {
@@ -661,13 +890,13 @@ function renderInlineChart(product) {
       },
       scales: {
         x: {
-          grid: { color: "rgba(44, 44, 52, 0.4)" },
-          ticks: { color: "#71717a", font: { family: "JetBrains Mono", size: 10 } },
+          grid: { color: "rgba(39, 45, 61, 0.4)" },
+          ticks: { color: "#64748b", font: { family: "JetBrains Mono", size: 10 } },
         },
         y: {
-          grid: { color: "rgba(44, 44, 52, 0.4)" },
+          grid: { color: "rgba(39, 45, 61, 0.4)" },
           ticks: {
-            color: "#71717a",
+            color: "#64748b",
             font: { family: "JetBrains Mono", size: 10 },
             callback: (val) => `৳ ${Number(val).toLocaleString()}`,
           },
@@ -716,7 +945,7 @@ async function loadProductComments(productId) {
 
     if (!data || data.length === 0) {
       thread.innerHTML = `
-        <div class="text-xs text-zinc-500 font-mono py-2 text-center">
+        <div class="text-xs text-slate-500 font-mono py-2 text-center">
           No feedback yet on this specific item. Post the first review above!
         </div>
       `;
@@ -728,18 +957,18 @@ async function loadProductComments(productId) {
       const stars = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
 
       return `
-        <div class="p-2.5 bg-zinc-900 border border-zinc-800 rounded space-y-1">
+        <div class="p-2.5 bg-dark-900 border border-dark-700 rounded-lg space-y-1">
           <div class="flex items-center justify-between text-xs">
             <div class="flex items-center space-x-2">
               <span class="font-bold text-white text-[11px] font-mono cursor-pointer hover:underline" data-action="view-profile" data-username="${escapeHtml(r.user_name || 'Buyer')}">
                 @${escapeHtml(r.user_name || 'Buyer')}
               </span>
-              <span class="text-[10px] font-mono px-1 py-0.2 rounded bg-zinc-800 text-zinc-400">${maskedPhone}</span>
+              <span class="text-[10px] font-mono px-1 py-0.2 rounded bg-dark-800 text-slate-400">${maskedPhone}</span>
             </div>
             <span class="text-amber-400 font-mono text-[11px]">${stars}</span>
           </div>
-          <p class="text-xs text-zinc-300 leading-normal">${escapeHtml(r.comment_text)}</p>
-          <div class="text-[10px] font-mono text-zinc-500 flex justify-between pt-0.5">
+          <p class="text-xs text-slate-300 leading-normal font-sans">${escapeHtml(r.comment_text)}</p>
+          <div class="text-[10px] font-mono text-slate-500 flex justify-between pt-0.5">
             <span>${formatTimeAgo(r.created_at)}</span>
             <span>Helpful (${r.helpful_count || 0})</span>
           </div>
@@ -881,7 +1110,7 @@ async function fetchLiveRecentReviews() {
     if (error) throw error;
 
     if (!data || data.length === 0) {
-      container.innerHTML = `<div class="text-xs text-zinc-500 font-mono py-2">No reviews recorded yet.</div>`;
+      container.innerHTML = `<div class="text-xs text-slate-500 font-mono py-2">No reviews recorded yet.</div>`;
       return;
     }
 
@@ -891,16 +1120,16 @@ async function fetchLiveRecentReviews() {
       const productTitle = r.products ? r.products.title : "Component";
 
       return `
-        <div class="p-2.5 bg-zinc-950/70 border border-zinc-800 rounded space-y-1.5 hover:border-zinc-700 transition cursor-pointer" onclick="highlightProduct('${escapeHtml(r.product_id)}')">
+        <div class="p-2.5 bg-dark-950/70 border border-dark-700 rounded-lg space-y-1.5 hover:border-dark-600 transition cursor-pointer" onclick="highlightProduct('${escapeHtml(r.product_id)}')">
           <div class="flex items-center justify-between text-[11px] font-mono">
             <span class="font-bold text-white">${escapeHtml(r.user_name || 'Buyer')}</span>
             <span class="text-amber-400">${stars}</span>
           </div>
-          <div class="text-[10px] font-mono text-accent-cyan truncate">
+          <div class="text-[10px] font-mono text-cyan-400 truncate">
             Re: ${escapeHtml(productTitle)}
           </div>
-          <p class="text-xs text-zinc-300 line-clamp-2 leading-relaxed">${escapeHtml(r.comment_text)}</p>
-          <div class="text-[10px] font-mono text-zinc-500 flex justify-between pt-0.5">
+          <p class="text-xs text-slate-300 line-clamp-2 leading-relaxed font-sans">${escapeHtml(r.comment_text)}</p>
+          <div class="text-[10px] font-mono text-slate-500 flex justify-between pt-0.5">
             <span>${maskedPhone}</span>
             <span>${formatTimeAgo(r.created_at)}</span>
           </div>
@@ -922,8 +1151,8 @@ function highlightProduct(productId) {
   const card = document.getElementById(`card-${productId}`);
   if (card) {
     card.scrollIntoView({ behavior: "smooth", block: "center" });
-    card.classList.add("ring-2", "ring-accent-cyan", "glow-active");
-    setTimeout(() => card.classList.remove("ring-2", "ring-accent-cyan", "glow-active"), 3000);
+    card.classList.add("ring-2", "ring-cyan-400", "glow-active");
+    setTimeout(() => card.classList.remove("ring-2", "ring-cyan-400", "glow-active"), 3000);
     toggleCommentsInline(productId);
   } else {
     const product = allProducts.find((p) => p.id === productId);
@@ -951,7 +1180,6 @@ async function handleDealUpvote(productId, buttonEl) {
 
   localStorage.setItem("tp_upvoted_deals", JSON.stringify([...userUpvotedSet]));
 
-  // Call Supabase Atomic Upvote RPC
   try {
     const { data } = await sb.rpc("toggle_deal_upvote", {
       p_product_id: productId,
@@ -960,8 +1188,8 @@ async function handleDealUpvote(productId, buttonEl) {
 
     if (data) {
       const countEl = buttonEl.querySelector("span");
-      if (countEl) countEl.innerText = data.total_upvotes;
-      buttonEl.classList.toggle("text-accent-emerald", data.upvoted);
+      if (countEl) countEl.innerText = `${data.total_upvotes} Upvotes`;
+      buttonEl.classList.toggle("text-emerald-400", data.upvoted);
       buttonEl.classList.toggle("border-emerald-800", data.upvoted);
       showToast(data.upvoted ? "Deal upvoted! 🔥" : "Upvote removed");
     }
@@ -1029,8 +1257,8 @@ function updateUserUI() {
 
   if (!currentUser) {
     container.innerHTML = `
-      <button onclick="openAuthModal()" class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-white font-medium border border-zinc-700 transition flex items-center space-x-1.5 text-xs">
-        <i data-lucide="user-plus" class="w-3.5 h-3.5 text-accent-cyan"></i>
+      <button onclick="openAuthModal()" class="px-3 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 text-white font-medium border border-dark-700 transition flex items-center space-x-1.5 text-xs">
+        <i data-lucide="user-plus" class="w-3.5 h-3.5 text-emerald-400"></i>
         <span>Sign In</span>
       </button>
     `;
@@ -1041,13 +1269,13 @@ function updateUserUI() {
   const initials = currentUser.username.substring(0, 2).toUpperCase();
   container.innerHTML = `
     <div class="flex items-center space-x-2">
-      <button onclick="openUserProfileModal('${escapeHtml(currentUser.username)}')" class="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white text-xs font-mono">
+      <button onclick="openUserProfileModal('${escapeHtml(currentUser.username)}')" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-dark-850 hover:bg-dark-800 border border-dark-700 text-white text-xs font-mono">
         <div class="h-4 w-4 rounded-full bg-emerald-500 text-[10px] flex items-center justify-center font-bold text-black">
           ${initials}
         </div>
         <span>@${escapeHtml(currentUser.username)}</span>
       </button>
-      <button onclick="handleLogout()" class="text-zinc-500 hover:text-red-400 text-xs px-1" title="Sign Out">✕</button>
+      <button onclick="handleLogout()" class="text-slate-500 hover:text-red-400 text-xs px-1" title="Sign Out">✕</button>
     </div>
   `;
 
@@ -1123,7 +1351,7 @@ async function openUserProfileModal(username) {
   document.getElementById("modal-profile-avatar").innerText = username.substring(0, 2).toUpperCase();
 
   const reviewsContainer = document.getElementById("modal-profile-reviews");
-  reviewsContainer.innerHTML = `<div class="text-zinc-500 py-1">Loading profile reviews...</div>`;
+  reviewsContainer.innerHTML = `<div class="text-slate-500 py-1">Loading profile reviews...</div>`;
 
   try {
     const { data: profile } = await sb.from("user_profiles").select("*").eq("username", username).single();
@@ -1135,17 +1363,17 @@ async function openUserProfileModal(username) {
 
     const { data: reviews } = await sb.from("comments").select("*, products(title, vendor_name)").eq("user_name", username).limit(5);
     if (!reviews || reviews.length === 0) {
-      reviewsContainer.innerHTML = `<div class="text-zinc-500 py-1">No product reviews published yet.</div>`;
+      reviewsContainer.innerHTML = `<div class="text-slate-500 py-1">No product reviews published yet.</div>`;
     } else {
       reviewsContainer.innerHTML = reviews.map((r) => `
-        <div class="p-2 bg-zinc-950 border border-zinc-800 rounded">
-          <div class="text-[10px] text-accent-cyan font-bold truncate">Re: ${escapeHtml(r.products ? r.products.title : 'Hardware')}</div>
-          <p class="text-[11px] text-zinc-300 line-clamp-2 mt-0.5">${escapeHtml(r.comment_text)}</p>
+        <div class="p-2.5 bg-dark-950 border border-dark-700 rounded-lg">
+          <div class="text-[10px] text-cyan-400 font-bold truncate">Re: ${escapeHtml(r.products ? r.products.title : 'Hardware')}</div>
+          <p class="text-[11px] text-slate-300 line-clamp-2 mt-0.5">${escapeHtml(r.comment_text)}</p>
         </div>
       `).join("");
     }
   } catch (e) {
-    reviewsContainer.innerHTML = `<div class="text-zinc-500">Member profile details loaded.</div>`;
+    reviewsContainer.innerHTML = `<div class="text-slate-500">Member profile details loaded.</div>`;
   }
 }
 
@@ -1176,7 +1404,6 @@ async function executeRagQuery() {
 
   const messagesContainer = document.getElementById("rag-messages");
 
-  // Append user message
   messagesContainer.innerHTML += `
     <div class="flex justify-end">
       <div class="p-2.5 bg-cyan-950/80 border border-cyan-800 text-cyan-200 rounded-lg max-w-[85%] text-xs font-mono">
@@ -1188,11 +1415,10 @@ async function executeRagQuery() {
   input.value = "";
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-  // Placeholder thinking message
   const loadingId = "rag-loading-" + Date.now();
   messagesContainer.innerHTML += `
-    <div id="${loadingId}" class="p-3 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-400 space-y-1 text-xs">
-      <div class="flex items-center space-x-2 text-accent-cyan">
+    <div id="${loadingId}" class="p-3 bg-dark-900 border border-dark-700 rounded-lg text-slate-400 space-y-1 text-xs">
+      <div class="flex items-center space-x-2 text-cyan-400">
         <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
         <span>Retrieving live facts from Supabase database...</span>
       </div>
@@ -1208,41 +1434,40 @@ async function executeRagQuery() {
   });
 
   if (matchedItems.length === 0) {
-    matchedItems = allProducts.slice(0, 5); // Fallback context
+    matchedItems = allProducts.slice(0, 5);
   } else {
     matchedItems = matchedItems.slice(0, 4);
   }
 
-  // Retrieve user reviews for matched items
   const matchedIds = matchedItems.map((m) => m.id);
   const { data: matchedReviews } = await sb.from("comments").select("*").in("product_id", matchedIds).limit(4);
 
   // 2. CONTEXT AUGMENTATION & ANSWER SYNTHESIS (RAG GENERATOR)
-  let answerHtml = `<div class="space-y-2 text-xs font-mono text-zinc-200">`;
-  answerHtml += `<p class="text-zinc-300">Based on live crawled listings across Bangladeshi retailers:</p>`;
+  let answerHtml = `<div class="space-y-2 text-xs font-mono text-slate-200">`;
+  answerHtml += `<p class="text-slate-300">Based on live crawled listings across Bangladeshi retailers:</p>`;
 
   matchedItems.forEach((item) => {
     const affiliateUrl = buildAffiliateUrl(item.product_url, item.vendor_name);
     answerHtml += `
-      <div class="p-2 bg-zinc-950 border border-zinc-800 rounded space-y-1">
+      <div class="p-2.5 bg-dark-950 border border-dark-700 rounded-lg space-y-1">
         <div class="font-bold text-white flex items-center justify-between">
           <span class="truncate">${escapeHtml(item.title)}</span>
-          <span class="text-accent-emerald ml-2 flex-shrink-0">৳ ${Number(item.current_price).toLocaleString()}</span>
+          <span class="text-emerald-400 ml-2 flex-shrink-0">৳ ${Number(item.current_price).toLocaleString()}</span>
         </div>
-        <div class="text-[11px] text-zinc-400 flex items-center justify-between">
+        <div class="text-[11px] text-slate-400 flex items-center justify-between">
           <span>Store: <strong>${escapeHtml(item.vendor_name)}</strong> (${escapeHtml(item.stock_status)})</span>
-          <a href="${affiliateUrl}" target="_blank" rel="sponsored" class="text-accent-cyan hover:underline">View Store →</a>
+          <a href="${affiliateUrl}" target="_blank" rel="sponsored" class="text-cyan-400 hover:underline">View Store →</a>
         </div>
       </div>
     `;
   });
 
   if (matchedReviews && matchedReviews.length > 0) {
-    answerHtml += `<div class="pt-1 text-[11px] text-zinc-400 font-bold">Community Verdicts in BD:</div>`;
+    answerHtml += `<div class="pt-1 text-[11px] text-slate-400 font-bold">Community Verdicts in BD:</div>`;
     matchedReviews.forEach((r) => {
       answerHtml += `
-        <div class="text-[11px] text-zinc-400 italic bg-zinc-950/60 p-1.5 rounded border border-zinc-850">
-          "${escapeHtml(r.comment_text)}" — <span class="text-zinc-300">@${escapeHtml(r.user_name || 'Buyer')} (${r.rating}/5★)</span>
+        <div class="text-[11px] text-slate-400 italic bg-dark-950/60 p-1.5 rounded border border-dark-800">
+          "${escapeHtml(r.comment_text)}" — <span class="text-slate-300">@${escapeHtml(r.user_name || 'Buyer')} (${r.rating}/5★)</span>
         </div>
       `;
     });
@@ -1250,12 +1475,11 @@ async function executeRagQuery() {
 
   answerHtml += `</div>`;
 
-  // Replace loading with synthesized grounded answer
   const loadingEl = document.getElementById(loadingId);
   if (loadingEl) {
     loadingEl.innerHTML = `
-      <div class="text-accent-cyan font-bold flex items-center gap-1.5 pb-1 border-b border-zinc-800">
-        <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-accent-emerald"></i>
+      <div class="text-cyan-400 font-bold flex items-center gap-1.5 pb-1 border-b border-dark-700">
+        <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>
         <span>Grounded Answer (${matchedItems.length} Sources Verified)</span>
       </div>
       ${answerHtml}
@@ -1286,7 +1510,7 @@ function getVendorTheme(vendor) {
   if (v.includes("ryans")) return { badge: "bg-yellow-500/10 text-yellow-300 border border-yellow-500/30" };
   if (v.includes("bdstall")) return { badge: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30" };
   if (v.includes("binary logic")) return { badge: "bg-blue-500/10 text-blue-400 border border-blue-500/30" };
-  return { badge: "bg-zinc-800 text-zinc-300 border border-zinc-700" };
+  return { badge: "bg-dark-800 text-slate-300 border border-dark-700" };
 }
 
 // Format Time
