@@ -622,7 +622,7 @@ function renderSingleCard(p) {
             <i data-lucide="line-chart" class="w-3.5 h-3.5 text-cyan-400"></i>
             Verified Cash Price Movement in Bangladesh (BDT)
           </span>
-          <button data-action="toggle-chart" data-id="${escapeHtml(p.id)}" class="text-slate-400 hover:text-white">✕ Close</button>
+          <button data-action="toggle-chart" data-id="${escapeHtml(p.id)}" class="text-slate-400 hover:text-white font-mono text-[11px]">[Close]</button>
         </div>
         <div class="h-44 w-full">
           <canvas id="canvas-chart-${escapeHtml(p.id)}"></canvas>
@@ -636,7 +636,7 @@ function renderSingleCard(p) {
             <i data-lucide="messages-square" class="w-3.5 h-3.5 text-emerald-400"></i>
             Verified Community Feedback & Store Experience
           </span>
-          <button data-action="toggle-comments" data-id="${escapeHtml(p.id)}" class="text-slate-400 hover:text-white">✕ Close</button>
+          <button data-action="toggle-comments" data-id="${escapeHtml(p.id)}" class="text-slate-400 hover:text-white font-mono text-[11px]">[Close]</button>
         </div>
 
         <!-- Inline Review Quick Submit -->
@@ -656,12 +656,12 @@ function renderSingleCard(p) {
               value="${currentUser ? escapeHtml(currentUser.username) : ''}"
               class="bg-dark-950 border border-dark-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-cyan-500"
             />
-            <select id="inline-rating-${escapeHtml(p.id)}" class="bg-dark-950 border border-dark-700 rounded-lg px-2 py-1 text-xs text-amber-400 font-mono">
-              <option value="5">★★★★★ (5/5)</option>
-              <option value="4">★★★★☆ (4/5)</option>
-              <option value="3">★★★☆☆ (3/5)</option>
-              <option value="2">★★☆☆☆ (2/5)</option>
-              <option value="1">★☆☆☆☆ (1/5)</option>
+            <select id="inline-rating-${escapeHtml(p.id)}" class="bg-dark-950 border border-dark-700 rounded-lg px-2 py-1 text-xs text-cyan-400 font-mono">
+              <option value="5">Score: 5 / 5</option>
+              <option value="4">Score: 4 / 5</option>
+              <option value="3">Score: 3 / 5</option>
+              <option value="2">Score: 2 / 5</option>
+              <option value="1">Score: 1 / 5</option>
             </select>
           </div>
           <textarea
@@ -843,10 +843,10 @@ function renderCommunityPostsFeed() {
 
 function getPostTypeBadge(type) {
   switch (type) {
-    case "Deal Alert": return `<span class="px-2 py-0.5 rounded text-[10px] bg-rose-950 text-rose-400 border border-rose-800 font-bold">🔥 Deal Alert</span>`;
-    case "Build Help": return `<span class="px-2 py-0.5 rounded text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800 font-bold">🛠️ Build Help</span>`;
-    case "Question": return `<span class="px-2 py-0.5 rounded text-[10px] bg-amber-950 text-amber-400 border border-amber-800 font-bold">❓ Question</span>`;
-    default: return `<span class="px-2 py-0.5 rounded text-[10px] bg-dark-800 text-slate-300 border border-dark-600 font-bold">💬 Discussion</span>`;
+    case "Deal Alert": return `<span class="px-2 py-0.5 rounded text-[10px] bg-rose-950 text-rose-400 border border-rose-800 font-mono font-bold tracking-wider uppercase">Deal Alert</span>`;
+    case "Build Help": return `<span class="px-2 py-0.5 rounded text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono font-bold tracking-wider uppercase">Build Help</span>`;
+    case "Question": return `<span class="px-2 py-0.5 rounded text-[10px] bg-amber-950 text-amber-400 border border-amber-800 font-mono font-bold tracking-wider uppercase">Question</span>`;
+    default: return `<span class="px-2 py-0.5 rounded text-[10px] bg-dark-800 text-slate-300 border border-dark-600 font-mono font-bold tracking-wider uppercase">Discussion</span>`;
   }
 }
 
@@ -1002,7 +1002,7 @@ async function loadProductComments(productId) {
     thread.innerHTML = data.map((r) => {
       const rawRating = Math.max(1, Math.min(5, Number(r.rating) || 5));
       const maskedPhone = escapeHtml(String(r.user_phone || "").replace(/^(\+?880?1[3-9]\d)(\d{4})(\d{3})$/, "$1••••$3"));
-      const stars = "★".repeat(rawRating) + "☆".repeat(5 - rawRating);
+      const scoreBadge = `<span class="px-1.5 py-0.2 rounded bg-dark-800 text-cyan-400 font-mono text-[10px] font-bold border border-dark-700">Rating: ${rawRating}/5</span>`;
 
       return `
         <div class="p-2.5 bg-dark-900 border border-dark-700 rounded-lg space-y-1">
@@ -1013,7 +1013,7 @@ async function loadProductComments(productId) {
               </span>
               <span class="text-[10px] font-mono px-1 py-0.2 rounded bg-dark-800 text-slate-400">${maskedPhone}</span>
             </div>
-            <span class="text-amber-400 font-mono text-[11px]">${stars}</span>
+            ${scoreBadge}
           </div>
           <p class="text-xs text-slate-300 leading-normal font-sans">${escapeHtml(r.comment_text)}</p>
           <div class="text-[10px] font-mono text-slate-500 flex justify-between pt-0.5">
@@ -1171,14 +1171,14 @@ async function fetchLiveRecentReviews() {
     container.innerHTML = data.map((r) => {
       const rawRating = Math.max(1, Math.min(5, Number(r.rating) || 5));
       const maskedPhone = escapeHtml(String(r.user_phone || "").replace(/^(\+?880?1[3-9]\d)(\d{4})(\d{3})$/, "$1••••$3"));
-      const stars = "★".repeat(rawRating) + "☆".repeat(5 - rawRating);
+      const scoreBadge = `<span class="px-1.5 py-0.2 rounded bg-dark-800 text-cyan-400 font-mono text-[10px] font-bold border border-dark-700">${rawRating}/5</span>`;
       const productTitle = r.products ? r.products.title : "Component";
 
       return `
         <div class="p-2.5 bg-dark-950/70 border border-dark-700 rounded-lg space-y-1.5 hover:border-dark-600 transition cursor-pointer" data-action="highlight-product" data-id="${escapeHtml(r.product_id)}">
           <div class="flex items-center justify-between text-[11px] font-mono">
             <span class="font-bold text-white">${escapeHtml(r.user_name || 'Buyer')}</span>
-            <span class="text-amber-400">${stars}</span>
+            ${scoreBadge}
           </div>
           <div class="text-[10px] font-mono text-cyan-400 truncate">
             Re: ${escapeHtml(productTitle)}
@@ -1246,7 +1246,7 @@ async function handleDealUpvote(productId, buttonEl) {
       if (countEl) countEl.innerText = `${data.total_upvotes} Upvotes`;
       buttonEl.classList.toggle("text-emerald-400", data.upvoted);
       buttonEl.classList.toggle("border-emerald-800", data.upvoted);
-      showToast(data.upvoted ? "Deal upvoted! 🔥" : "Upvote removed");
+      showToast(data.upvoted ? "Deal upvoted" : "Upvote removed");
     }
   } catch (err) {
     showToast("Upvote recorded locally.");
@@ -1272,7 +1272,7 @@ async function handlePostUpvote(postId) {
     if (post && data) {
       post.upvotes_count = data.total_upvotes;
       renderCommunityPostsFeed();
-      showToast(data.upvoted ? "Post upvoted! 🔥" : "Upvote removed");
+      showToast(data.upvoted ? "Post upvoted" : "Upvote removed");
     }
   } catch (err) {
     showToast(`Vote error: ${err.message}`);
@@ -1343,7 +1343,7 @@ function updateUserUI() {
         </div>
         <span>@${escapeHtml(currentUser.username)}</span>
       </button>
-      <button onclick="handleLogout()" class="text-slate-500 hover:text-red-400 text-xs px-1" title="Sign Out">✕</button>
+      <button onclick="handleLogout()" class="text-slate-500 hover:text-red-400 text-[11px] font-mono px-1" title="Sign Out">[Exit]</button>
     </div>
   `;
 
@@ -1351,7 +1351,7 @@ function updateUserUI() {
   document.getElementById("sidebar-user-avatar").innerText = initials;
   document.getElementById("sidebar-user-name").innerText = `@${currentUser.username}`;
   document.getElementById("sidebar-user-phone").innerText = currentUser.user_phone.replace(/^(\+?880?1[3-9]\d)(\d{4})(\d{3})$/, "$1••••$3");
-  document.getElementById("sidebar-user-rep").innerText = `★ ${currentUser.reputation_points || 15}`;
+  document.getElementById("sidebar-user-rep").innerText = `${currentUser.reputation_points || 15} PTS`;
 
   if (composerPhone) composerPhone.value = currentUser.user_phone;
   if (composerName) composerName.value = currentUser.username;
@@ -1427,7 +1427,7 @@ async function openUserProfileModal(username) {
     const { data: profile } = await sb.from("user_profiles").select("*").eq("username", username).single();
     if (profile) {
       document.getElementById("modal-profile-bio").innerText = `"${profile.bio || 'Hardware Enthusiast'}"`;
-      document.getElementById("modal-profile-rep").innerText = `★ ${profile.reputation_points || 15}`;
+      document.getElementById("modal-profile-rep").innerText = `${profile.reputation_points || 15} PTS`;
       document.getElementById("modal-profile-phone").innerText = profile.user_phone.replace(/^(\+?880?1[3-9]\d)(\d{4})(\d{3})$/, "$1••••$3");
     }
 
@@ -1537,7 +1537,7 @@ async function executeRagQuery() {
     matchedReviews.forEach((r) => {
       answerHtml += `
         <div class="text-[11px] text-slate-400 italic bg-dark-950/60 p-1.5 rounded border border-dark-800">
-          "${escapeHtml(r.comment_text)}" — <span class="text-slate-300">@${escapeHtml(r.user_name || 'Buyer')} (${r.rating}/5★)</span>
+          "${escapeHtml(r.comment_text)}" — <span class="text-slate-300">@${escapeHtml(r.user_name || 'Buyer')} (Rating: ${r.rating}/5)</span>
         </div>
       `;
     });
