@@ -56,16 +56,28 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchOutboundStats();
   handleUrlDeepLink();
 
-  // URL Hash handling (#community vs #hardware)
-  if (window.location.hash.toLowerCase() === "#community") {
+  // URL Hash handling (#community vs #catalog vs #build-lab vs #price-radar)
+  const initialHash = window.location.hash.toLowerCase();
+  if (initialHash === "#community") {
     switchMainFeedMode("COMMUNITY");
+  } else if (initialHash === "#build-lab") {
+    switchMainFeedMode("BUILD_LAB");
+  } else if (initialHash === "#price-radar") {
+    switchMainFeedMode("PRICE_RADAR");
+  } else if (initialHash === "#catalog" || initialHash === "#hardware") {
+    switchMainFeedMode("CATALOG");
   }
+
   window.addEventListener("hashchange", () => {
     const hash = window.location.hash.toLowerCase();
     if (hash === "#community" && activeFeedMode !== "COMMUNITY") {
       switchMainFeedMode("COMMUNITY");
-    } else if ((hash === "#hardware" || hash === "") && activeFeedMode !== "HARDWARE") {
-      switchMainFeedMode("HARDWARE");
+    } else if (hash === "#build-lab" && activeFeedMode !== "BUILD_LAB") {
+      switchMainFeedMode("BUILD_LAB");
+    } else if (hash === "#price-radar" && activeFeedMode !== "PRICE_RADAR") {
+      switchMainFeedMode("PRICE_RADAR");
+    } else if ((hash === "#catalog" || hash === "#hardware" || hash === "") && activeFeedMode !== "CATALOG") {
+      switchMainFeedMode("CATALOG");
     }
   });
 });
@@ -150,7 +162,7 @@ function setupInfiniteScrollObserver() {
   if (!sentinel) return;
 
   const observer = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting && activeFeedMode === "HARDWARE" && currentRenderCount < filteredProducts.length) {
+    if (entries[0].isIntersecting && activeFeedMode === "CATALOG" && currentRenderCount < filteredProducts.length) {
       currentRenderCount += BATCH_SIZE;
       renderHardwareFeed(false);
     }
@@ -1089,12 +1101,12 @@ function renderInlineChart(product) {
         {
           label: "Cash Price in BDT",
           data: dataPoints,
-          borderColor: "#06b6d4",
-          backgroundColor: "rgba(6, 182, 212, 0.08)",
+          borderColor: "#77d4ff",
+          backgroundColor: "rgba(119, 212, 255, 0.08)",
           fill: true,
           tension: 0.2,
-          pointBackgroundColor: "#22d3ee",
-          pointBorderColor: "#07090e",
+          pointBackgroundColor: "#77d4ff",
+          pointBorderColor: "#0b0f14",
           pointRadius: 4,
           borderWidth: 2,
         },
@@ -1106,7 +1118,9 @@ function renderInlineChart(product) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "#141822",
+          backgroundColor: "#111821",
+          borderColor: "#2a3745",
+          borderWidth: 1,
           titleFont: { family: "JetBrains Mono" },
           bodyFont: { family: "JetBrains Mono" },
           callbacks: {
@@ -1116,13 +1130,13 @@ function renderInlineChart(product) {
       },
       scales: {
         x: {
-          grid: { color: "rgba(39, 45, 61, 0.4)" },
-          ticks: { color: "#64748b", font: { family: "JetBrains Mono", size: 10 } },
+          grid: { color: "rgba(42, 55, 69, 0.5)" },
+          ticks: { color: "#a7b4c3", font: { family: "JetBrains Mono", size: 10 } },
         },
         y: {
-          grid: { color: "rgba(39, 45, 61, 0.4)" },
+          grid: { color: "rgba(42, 55, 69, 0.5)" },
           ticks: {
-            color: "#64748b",
+            color: "#a7b4c3",
             font: { family: "JetBrains Mono", size: 10 },
             callback: (val) => `৳ ${Number(val).toLocaleString()}`,
           },
@@ -1394,8 +1408,8 @@ async function fetchLiveRecentReviews() {
 
 // Highlight & Scroll to product
 function highlightProduct(productId) {
-  if (activeFeedMode !== "HARDWARE") {
-    switchMainFeedMode("HARDWARE");
+  if (activeFeedMode !== "CATALOG") {
+    switchMainFeedMode("CATALOG");
   }
 
   const card = document.getElementById(`card-${productId}`);
@@ -1804,6 +1818,30 @@ function clearCurrentBuild() {
   updateBuildNavCount();
   showToast("Build Lab cleared");
   renderBuildLab();
+}
+
+function copyBuildSummary() {
+  const selected = Object.entries(buildLabSlots).filter(([_, item]) => Boolean(item));
+  if (selected.length === 0) {
+    showToast("Your Build Lab is currently empty.");
+    return;
+  }
+
+  let summary = `[TechPulse BD PC Build Summary]\n`;
+  let total = 0;
+  selected.forEach(([slot, item]) => {
+    const price = activePriceMode === "CARD" ? Math.round(Number(item.current_price) * 1.07) : Number(item.current_price);
+    total += price;
+    summary += `• ${slot}: ${item.title} — ৳ ${price.toLocaleString()} (${item.vendor_name})\n`;
+  });
+  summary += `Total (${activePriceMode === 'CASH' ? 'Cash Discount' : 'Card POS'}): ৳ ${total.toLocaleString()}\n`;
+  summary += `Built on TechPulse BD (DataForger) Price Intelligence`;
+
+  navigator.clipboard.writeText(summary).then(() => {
+    showToast("Build summary copied to clipboard! Paste in forum or social.");
+  }).catch(() => {
+    showToast("Could not copy automatically.");
+  });
 }
 
 function updateBuildNavCount() {
