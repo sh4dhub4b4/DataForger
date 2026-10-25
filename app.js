@@ -607,16 +607,35 @@ function buildAffiliateUrl(originalUrl, vendorName) {
 }
 
 function sanitizeUrl(url) {
-  if (!url) return "#";
+  if (!url) return "";
   try {
-    const parsed = new URL(url);
+    let clean = url.trim();
+    if (clean.startsWith("://")) clean = "https" + clean;
+    else if (clean.startsWith("//")) clean = "https:" + clean;
+
+    const parsed = new URL(clean);
     if (parsed.protocol === "http:" || parsed.protocol === "https:") {
       return parsed.toString();
     }
-    return "#";
+    return "";
   } catch (e) {
-    return "#";
+    return "";
   }
+}
+
+// Generate Hardware Category SVG Placeholder if retailer image fails
+function getHardwareCategoryPlaceholder(category) {
+  const cat = (category || "").toLowerCase();
+  let label = "HARDWARE";
+  let color = "%2377d4ff";
+  if (cat.includes("monitor")) { label = "MONITOR"; color = "%2338bdf8"; }
+  else if (cat.includes("ssd") || cat.includes("storage")) { label = "NVME+SSD"; color = "%2334d399"; }
+  else if (cat.includes("laptop")) { label = "LAPTOP"; color = "%23a78bfa"; }
+  else if (cat.includes("keyboard")) { label = "KEYBOARD"; color = "%23f59e0b"; }
+  else if (cat.includes("mouse")) { label = "MOUSE"; color = "%23ec4899"; }
+  else if (cat.includes("processor") || cat.includes("cpu")) { label = "CPU"; color = "%23ef4444"; }
+
+  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" fill="%230b0f14"><rect width="160" height="160" fill="%230b0f14" rx="12"/><rect x="8" y="8" width="144" height="144" fill="%23111821" stroke="%232a3745" stroke-dasharray="4" rx="8"/><text x="80" y="75" text-anchor="middle" fill="${color}" font-family="monospace" font-size="12" font-weight="bold">${label}</text><text x="80" y="95" text-anchor="middle" fill="%2364748b" font-family="monospace" font-size="9">PREVIEW N/A</text></svg>`;
 }
 
 // Single Hardware Card (Realistic BD Retail Polish)
@@ -648,6 +667,9 @@ function renderSingleCard(p) {
       ${escapeHtml(s.label)}
     </span>
   `).join("");
+
+  const placeholderSvg = getHardwareCategoryPlaceholder(p.category);
+  const initialImg = safeImageUrl || placeholderSvg;
 
   return `
     <article class="cyber-card ${vendorTheme.borderAccent} rounded-xl overflow-hidden transition" id="card-${escapeHtml(p.id)}">
@@ -682,14 +704,14 @@ function renderSingleCard(p) {
         <!-- Lazy Loaded Image Thumbnail with Direct Fallback & Cross-Origin Support -->
         <div class="h-24 w-24 sm:h-28 sm:w-28 bg-dark-950 rounded-lg border border-dark-700 flex-shrink-0 flex items-center justify-center p-2 overflow-hidden group relative">
           <img
-            src="${safeImageUrl}"
+            src="${initialImg}"
             alt="${escapeHtml(p.title)}"
             loading="lazy"
             decoding="async"
             referrerpolicy="no-referrer"
             crossorigin="anonymous"
             class="max-h-full max-w-full object-contain group-hover:scale-105 transition duration-200"
-            onerror="if(this.src !== 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=240&auto=format&fit=crop&q=60'){ this.src='https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=240&auto=format&fit=crop&q=60'; }"
+            onerror="if(this.src !== '${placeholderSvg}'){ this.src='${placeholderSvg}'; }"
           />
         </div>
 
@@ -1259,6 +1281,11 @@ async function submitInlineReview(productId) {
     showToast("Review published!");
     loadProductComments(productId);
     fetchLiveRecentReviews();
+    
+    // Auto sync modal profile reviews if open
+    if (currentUser && currentUser.username === name) {
+      loadProfileReviews(currentUser.user_phone);
+    }
   } catch (err) {
     showToast(`Failed: ${err.message}`);
   }
