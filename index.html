@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TechPulse BD — Hardware Community, Price Radar & Affiliate Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Space Grotesk"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            zinc: {
+              950: '#09090b',
+              900: '#121215',
+              850: '#18181c',
+              800: '#202025',
+              700: '#2c2c34',
+              600: '#3f3f4a',
+            },
+            accent: {
+              emerald: '#10b981',
+              cyan: '#06b6d4',
+              amber: '#f59e0b',
+              rose: '#f43f5e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #09090b;
+      color: #e4e4e7;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #121215;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #2c2c34;
+      border-radius: 4px;
+    }
+    @keyframes pulseUpvote {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+    .upvote-active {
+      animation: pulseUpvote 0.25s ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-zinc-700 selection:text-white">
+
+  <!-- TOP COMMUNITY NAVBAR -->
+  <header class="border-b border-zinc-800 bg-zinc-950/95 sticky top-0 z-50 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
+      
+      <!-- Brand & Hub -->
+      <div class="flex items-center space-x-3 flex-shrink-0">
+        <a href="#" class="flex items-center space-x-2.5">
+          <div class="h-8 w-8 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center text-white font-mono font-bold text-sm">
+            TP
+          </div>
+          <div class="flex flex-col">
+            <span class="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
+              TechPulse BD
+              <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/80">COMMUNITY</span>
+            </span>
+            <span class="text-[10px] font-mono text-zinc-400">Bangladesh Tech Hardware Radar</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- Quick Search Bar -->
+      <div class="flex-1 max-w-xl relative">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500">
+          <i data-lucide="search" class="w-4 h-4"></i>
+        </div>
+        <input
+          id="global-search"
+          type="text"
+          placeholder="Search monitors, SSDs, GPUs across Star Tech, Tech Land, Ryans..."
+          class="w-full pl-9 pr-8 py-1.5 bg-zinc-900 border border-zinc-700/80 rounded-md text-xs text-white placeholder-zinc-500 font-mono focus:outline-none focus:border-zinc-500"
+          oninput="handleSearch()"
+        />
+        <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-zinc-600 font-mono text-[10px]">
+          <kbd class="px-1 py-0.5 border border-zinc-700 rounded bg-zinc-800">/</kbd>
+        </div>
+      </div>
+
+      <!-- User Side / Profile Actions -->
+      <div class="flex items-center space-x-3 text-xs font-mono">
+        <div class="hidden md:flex items-center space-x-2 text-zinc-400">
+          <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+          <span><strong id="header-product-count" class="text-white">--</strong> items live</span>
+        </div>
+
+        <!-- Social User Auth Pill / Button -->
+        <div id="user-auth-section">
+          <button onclick="openAuthModal()" class="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-white font-medium border border-zinc-700 transition flex items-center space-x-1.5 text-xs">
+            <i data-lucide="user" class="w-3.5 h-3.5 text-accent-cyan"></i>
+            <span>Join Community</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Category Tabs Bar -->
+    <div class="border-t border-zinc-850 bg-zinc-900/60 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-7xl mx-auto flex items-center space-x-1 overflow-x-auto custom-scrollbar py-1.5 text-xs font-mono text-zinc-400">
+        <button onclick="setCategoryFilter('ALL')" class="category-tab px-3 py-1 rounded text-white bg-zinc-800 font-semibold" data-cat="ALL">
+          All Feed
+        </button>
+        <button onclick="setCategoryFilter('Monitor')" class="category-tab px-3 py-1 rounded hover:text-white hover:bg-zinc-800/60 transition" data-cat="Monitor">
+          🖥️ Monitors (<span id="count-monitors">--</span>)
+        </button>
+        <button onclick="setCategoryFilter('SSD')" class="category-tab px-3 py-1 rounded hover:text-white hover:bg-zinc-800/60 transition" data-cat="SSD">
+          💾 SSDs (<span id="count-ssds">--</span>)
+        </button>
+        <button onclick="setCategoryFilter('Processor')" class="category-tab px-3 py-1 rounded hover:text-white hover:bg-zinc-800/60 transition" data-cat="Processor">
+          ⚡ Processors
+        </button>
+        <button onclick="setCategoryFilter('Keyboard')" class="category-tab px-3 py-1 rounded hover:text-white hover:bg-zinc-800/60 transition" data-cat="Keyboard">
+          ⌨️ Keyboards
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- AFFILIATE DISCLOSURE BANNER -->
+  <aside class="bg-zinc-900/80 border-b border-zinc-850 px-4 py-1.5 text-[11px] font-mono text-zinc-400 text-center flex items-center justify-center space-x-2">
+    <i data-lucide="shield-check" class="w-3.5 h-3.5 text-accent-emerald"></i>
+    <span>Unbiased Community Pricing. Outbound retailer links may earn TechPulse BD a partner referral at 0 extra cost to you.</span>
+  </aside>
+
+  <!-- MAIN 2-COLUMN COMMUNITY LAYOUT -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- LEFT COLUMN: HARDWARE & DISCUSSION FEED (8 Cols) -->
+      <section class="lg:col-span-8 space-y-4">
+        
+        <!-- Filter Controls Bar -->
+        <div class="flex items-center justify-between text-xs font-mono text-zinc-400 pb-1">
+          <div class="flex items-center space-x-2">
+            <span>Filter Store:</span>
+            <select id="feed-vendor-filter" onchange="applyFilters()" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-zinc-500">
+              <option value="ALL">All Stores (11 BD Retailers)</option>
+              <option value="Star Tech">Star Tech</option>
+              <option value="Tech Land">Tech Land</option>
+              <option value="Ryans">Ryans</option>
+              <option value="BDstall">BDstall</option>
+              <option value="Binary Logic">Binary Logic</option>
+            </select>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span>Sort:</span>
+            <select id="feed-sort-filter" onchange="applyFilters()" class="bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-white text-xs focus:outline-none focus:border-zinc-500">
+              <option value="NEWEST">Latest Ingested</option>
+              <option value="PRICE_ASC">Price: Low to High</option>
+              <option value="PRICE_DESC">Price: High to Low</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- The Feed Stream -->
+        <div id="hardware-feed" class="space-y-4">
+          <!-- Dynamically populated hardware cards -->
+          <div class="p-8 text-center text-zinc-500 font-mono text-xs border border-dashed border-zinc-800 rounded-lg">
+            <i data-lucide="loader-2" class="w-5 h-5 mx-auto animate-spin mb-2 text-zinc-400"></i>
+            Loading live hardware feed from Supabase...
+          </div>
+        </div>
+
+        <!-- Lazy Load Trigger / Load More Button -->
+        <div id="lazy-sentinel" class="py-6 text-center">
+          <button id="btn-load-more" onclick="loadMoreProducts()" class="px-5 py-2 rounded bg-zinc-900 hover:bg-zinc-800 text-xs font-mono border border-zinc-800 hover:border-zinc-700 text-zinc-300 transition">
+            Load More Components ↓
+          </button>
+        </div>
+
+      </section>
+
+      <!-- RIGHT COLUMN: COMMUNITY LIVE TICKER & COMPOSER (4 Cols) -->
+      <aside class="lg:col-span-4 space-y-5 sticky top-28">
+        
+        <!-- Active User Profile Status Widget (When Logged In) -->
+        <div id="sidebar-user-card" class="hidden bg-zinc-900 border border-zinc-800 rounded-lg p-3.5 space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2.5">
+              <div id="sidebar-user-avatar" class="h-9 w-9 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-sm font-mono border border-zinc-700">
+                U
+              </div>
+              <div>
+                <div id="sidebar-user-name" class="text-xs font-bold text-white font-mono">@Username</div>
+                <div id="sidebar-user-phone" class="text-[10px] text-zinc-400 font-mono">017••••5678</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-[10px] font-mono text-zinc-400">Reputation</div>
+              <div id="sidebar-user-rep" class="text-xs font-bold font-mono text-accent-emerald">★ 25</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Review Composer Widget -->
+        <div id="review-composer-card" class="bg-zinc-900 border border-zinc-800 rounded-lg p-4 shadow-sm space-y-3">
+          <div class="flex items-center justify-between border-b border-zinc-800 pb-2.5">
+            <div class="flex items-center space-x-2">
+              <div class="h-6 w-6 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center justify-center text-xs font-bold font-mono">
+                BD
+              </div>
+              <span class="text-xs font-bold text-white tracking-wide">Write Unbiased Review</span>
+            </div>
+            <span class="text-[10px] font-mono text-zinc-500">Uncensored</span>
+          </div>
+
+          <!-- Product Picker -->
+          <div class="space-y-1">
+            <label class="text-[11px] font-mono text-zinc-400">Select Hardware to Review:</label>
+            <select id="composer-product-select" class="w-full bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-zinc-600 truncate">
+              <option value="">Choose Component...</option>
+            </select>
+          </div>
+
+          <!-- Phone Number Auth Verification (Pre-filled if logged in) -->
+          <div class="space-y-1">
+            <label class="text-[11px] font-mono text-zinc-400">Your Mobile (Anti-Spam Verification):</label>
+            <input
+              id="composer-phone"
+              type="text"
+              placeholder="017XXXXXXXX or +8801XXXXXXXX"
+              class="w-full bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1.5 text-xs text-white font-mono placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
+            />
+          </div>
+
+          <!-- Name & Star Rating -->
+          <div class="grid grid-cols-2 gap-2">
+            <input
+              id="composer-name"
+              type="text"
+              placeholder="Name / Handle"
+              class="bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 text-xs text-white font-mono placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
+            />
+            <select id="composer-rating" class="bg-zinc-950 border border-zinc-800 rounded px-2 py-1.5 text-xs text-amber-400 font-mono focus:outline-none focus:border-zinc-600">
+              <option value="5">★★★★★ (5)</option>
+              <option value="4">★★★★☆ (4)</option>
+              <option value="3">★★★☆☆ (3)</option>
+              <option value="2">★★☆☆☆ (2)</option>
+              <option value="1">★☆☆☆☆ (1)</option>
+            </select>
+          </div>
+
+          <!-- Review Body -->
+          <textarea
+            id="composer-text"
+            rows="3"
+            placeholder="Real build feedback: coil whine, thermals, IPS glow, warranty replacement speed..."
+            class="w-full bg-zinc-950 border border-zinc-800 rounded p-2 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-600"
+          ></textarea>
+
+          <button
+            onclick="submitComposerReview()"
+            class="w-full py-2 rounded bg-zinc-800 hover:bg-zinc-700 text-white font-mono text-xs font-semibold border border-zinc-700 transition flex items-center justify-center space-x-1.5"
+          >
+            <i data-lucide="send" class="w-3.5 h-3.5 text-accent-emerald"></i>
+            <span>Publish to Community Feed</span>
+          </button>
+        </div>
+
+        <!-- Live Community Reviews Ticker -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3">
+          <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+            <span class="text-xs font-bold text-white tracking-wide flex items-center gap-1.5">
+              <span class="h-1.5 w-1.5 rounded-full bg-accent-cyan animate-pulse"></span>
+              Live Community Activity
+            </span>
+            <span class="text-[10px] font-mono text-zinc-500">BD Verified</span>
+          </div>
+
+          <!-- Ticker Stream -->
+          <div id="live-reviews-ticker" class="space-y-3 max-h-[360px] overflow-y-auto custom-scrollbar pr-1">
+            <div class="text-xs text-zinc-500 font-mono py-2">Listening for community feedback...</div>
+          </div>
+        </div>
+
+        <!-- Affiliate & Market Stats Box -->
+        <div class="bg-zinc-900/60 border border-zinc-800/80 rounded-lg p-3.5 text-xs font-mono space-y-2">
+          <div class="text-zinc-400 font-semibold flex items-center justify-between">
+            <span>Affiliate Referral Engine</span>
+            <span class="text-emerald-400">Live Tagged</span>
+          </div>
+          <div class="text-[11px] text-zinc-500 space-y-1">
+            <div class="flex justify-between">
+              <span>Partner Stores:</span>
+              <strong class="text-zinc-300">Star Tech, Tech Land, Ryans + 8</strong>
+            </div>
+            <div class="flex justify-between">
+              <span>Total Clicks Logged:</span>
+              <strong id="pulse-clicks" class="text-zinc-300">-- clicks</strong>
+            </div>
+            <div class="flex justify-between">
+              <span>Commission Potential:</span>
+              <strong class="text-emerald-400">2% – 5% per lead</strong>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+
+    </div>
+  </main>
+
+  <!-- AUTH / JOIN COMMUNITY MODAL -->
+  <div id="auth-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-3">
+        <div class="flex items-center space-x-2">
+          <div class="h-7 w-7 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center text-accent-cyan">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+          </div>
+          <span class="font-bold text-white text-sm">Join TechPulse Community</span>
+        </div>
+        <button onclick="closeAuthModal()" class="text-zinc-500 hover:text-white">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs font-mono">
+        <div>
+          <label class="text-zinc-400 block mb-1">Bangladeshi Phone (Anti-Spam Identity):</label>
+          <input
+            id="auth-phone-input"
+            type="text"
+            placeholder="017XXXXXXXX"
+            class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
+          />
+        </div>
+        <div>
+          <label class="text-zinc-400 block mb-1">Choose Username / Handle:</label>
+          <input
+            id="auth-username-input"
+            type="text"
+            placeholder="e.g. Tanvir_PC"
+            class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
+          />
+        </div>
+        <div>
+          <label class="text-zinc-400 block mb-1">Short Bio (Optional):</label>
+          <input
+            id="auth-bio-input"
+            type="text"
+            placeholder="e.g. Budget PC Gamer / Video Editor"
+            class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-white focus:outline-none focus:border-zinc-500"
+          />
+        </div>
+      </div>
+
+      <div class="pt-2">
+        <button
+          onclick="handleAuthSubmit()"
+          class="w-full py-2.5 rounded bg-zinc-800 hover:bg-zinc-700 text-white font-mono text-xs font-bold border border-zinc-700 transition"
+        >
+          Save & Enter Community
+        </button>
+        <p class="text-[10px] font-mono text-zinc-500 text-center mt-2">
+          We use your number only to prevent seller manipulation and duplicate spam reviews.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-16 opacity-0 transition duration-300 bg-zinc-800 border border-zinc-700 text-white text-xs font-mono px-4 py-2.5 rounded-lg shadow-2xl flex items-center space-x-2">
+    <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+    <span id="toast-message">Notification</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
