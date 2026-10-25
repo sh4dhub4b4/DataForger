@@ -629,13 +629,20 @@ function getHardwareCategoryPlaceholder(category) {
   let label = "HARDWARE";
   let color = "%2377d4ff";
   if (cat.includes("monitor")) { label = "MONITOR"; color = "%2338bdf8"; }
-  else if (cat.includes("ssd") || cat.includes("storage")) { label = "NVME+SSD"; color = "%2334d399"; }
+  else if (cat.includes("ssd") || cat.includes("storage")) { label = "NVME SSD"; color = "%2334d399"; }
   else if (cat.includes("laptop")) { label = "LAPTOP"; color = "%23a78bfa"; }
   else if (cat.includes("keyboard")) { label = "KEYBOARD"; color = "%23f59e0b"; }
   else if (cat.includes("mouse")) { label = "MOUSE"; color = "%23ec4899"; }
-  else if (cat.includes("processor") || cat.includes("cpu")) { label = "CPU"; color = "%23ef4444"; }
+  else if (cat.includes("processor") || cat.includes("cpu")) { label = "PROCESSOR"; color = "%23ef4444"; }
 
-  return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" fill="%230b0f14"><rect width="160" height="160" fill="%230b0f14" rx="12"/><rect x="8" y="8" width="144" height="144" fill="%23111821" stroke="%232a3745" stroke-dasharray="4" rx="8"/><text x="80" y="75" text-anchor="middle" fill="${color}" font-family="monospace" font-size="12" font-weight="bold">${label}</text><text x="80" y="95" text-anchor="middle" fill="%2364748b" font-family="monospace" font-size="9">PREVIEW N/A</text></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" fill="#0b0f14" rx="8"/><rect x="8" y="8" width="144" height="144" fill="#111821" stroke="#2a3745" stroke-dasharray="4" rx="6"/><text x="80" y="78" text-anchor="middle" fill="${color.replace('%23', '#')}" font-family="monospace" font-size="12" font-weight="bold">${label}</text><text x="80" y="98" text-anchor="middle" fill="#64748b" font-family="monospace" font-size="9">PREVIEW N/A</text></svg>`;
+  return "data:image/svg+xml;base64," + btoa(svg);
+}
+
+function handleImageError(imgEl, category) {
+  imgEl.onerror = null;
+  imgEl.removeAttribute("crossorigin");
+  imgEl.src = getHardwareCategoryPlaceholder(category);
 }
 
 // Single Hardware Card (Realistic BD Retail Polish)
@@ -709,9 +716,8 @@ function renderSingleCard(p) {
             loading="lazy"
             decoding="async"
             referrerpolicy="no-referrer"
-            crossorigin="anonymous"
             class="max-h-full max-w-full object-contain group-hover:scale-105 transition duration-200"
-            onerror="if(this.src !== '${placeholderSvg}'){ this.src='${placeholderSvg}'; }"
+            onerror="handleImageError(this, '${escapeHtml(p.category || '')}')"
           />
         </div>
 
