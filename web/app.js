@@ -1110,14 +1110,22 @@ async function loadProductComments(productId) {
 
 // Submit Inline Review
 async function submitInlineReview(productId) {
-  const phone = document.getElementById(`inline-phone-${productId}`).value.trim();
-  const name = document.getElementById(`inline-name-${productId}`).value.trim() || (currentUser ? currentUser.username : "Community Member");
+  const phoneInput = document.getElementById(`inline-phone-${productId}`);
+  let phone = phoneInput ? phoneInput.value.trim() : "";
+  if (!phone && currentUser) phone = currentUser.user_phone;
+
+  const nameInput = document.getElementById(`inline-name-${productId}`);
+  let name = nameInput ? nameInput.value.trim() : "";
+  if (!name && currentUser) name = currentUser.username;
+  if (!name) name = "Community Member";
+
   const rating = parseInt(document.getElementById(`inline-rating-${productId}`).value, 10);
   const text = document.getElementById(`inline-text-${productId}`).value.trim();
 
   const bdPhoneRegex = /^(\+8801|01)[3-9]\d{8}$/;
   if (!bdPhoneRegex.test(phone)) {
     showToast("Invalid Bangladeshi phone. Format: 01XXXXXXXXX");
+    if (phoneInput) phoneInput.focus();
     return;
   }
   if (!text) {
@@ -1143,8 +1151,15 @@ async function submitInlineReview(productId) {
 // Submit Review from Sidebar Composer
 async function submitComposerReview() {
   const productId = document.getElementById("composer-product-select").value;
-  const phone = document.getElementById("composer-phone").value.trim();
-  const name = document.getElementById("composer-name").value.trim() || (currentUser ? currentUser.username : "Hardware Buyer");
+  const phoneInput = document.getElementById("composer-phone");
+  let phone = phoneInput ? phoneInput.value.trim() : "";
+  if (!phone && currentUser) phone = currentUser.user_phone;
+
+  const nameInput = document.getElementById("composer-name");
+  let name = nameInput ? nameInput.value.trim() : "";
+  if (!name && currentUser) name = currentUser.username;
+  if (!name) name = "Hardware Buyer";
+
   const rating = parseInt(document.getElementById("composer-rating").value, 10);
   const text = document.getElementById("composer-text").value.trim();
 
@@ -1155,6 +1170,7 @@ async function submitComposerReview() {
   const bdPhoneRegex = /^(\+8801|01)[3-9]\d{8}$/;
   if (!bdPhoneRegex.test(phone)) {
     showToast("Enter valid BD mobile number (01XXXXXXXXX).");
+    if (phoneInput) phoneInput.focus();
     return;
   }
   if (!text) {
