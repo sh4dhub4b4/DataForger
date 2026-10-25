@@ -316,7 +316,18 @@
       </div>
 
       <!-- Retailer & Sort Selectors -->
-      <div class="flex items-center space-x-3 ml-auto text-[11px]">
+      <div class="flex items-center flex-wrap gap-3 ml-auto text-[11px]">
+        <!-- In-Stock Filter Checkbox -->
+        <label class="flex items-center space-x-1.5 cursor-pointer text-slate-300 hover:text-white select-none py-1 px-2 rounded bg-dark-900 border border-dark-700 hover:border-dark-600 transition">
+          <input
+            type="checkbox"
+            id="feed-in-stock-only"
+            onchange="applyFilters()"
+            class="rounded bg-dark-800 border-dark-600 text-cyan-500 focus:ring-0 cursor-pointer w-3.5 h-3.5"
+          />
+          <span class="font-medium text-slate-300">Exclude Out of Stock</span>
+        </label>
+
         <div class="flex items-center space-x-1.5">
           <span>Retailer:</span>
           <select id="feed-vendor-filter" onchange="applyFilters()" class="bg-dark-900 border border-dark-700 rounded px-2 py-1 text-white text-[11px] focus:outline-none focus:border-cyan-500">
