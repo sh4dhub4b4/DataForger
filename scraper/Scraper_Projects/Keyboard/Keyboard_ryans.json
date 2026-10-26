@@ -1,7 +1,7 @@
 {
   "meta": {
     "name": "Keyboard_ryans",
-    "url": "https://www.ryans.com/category/desktop-component-keyboard?limit=100"
+    "url": "https://web.archive.org/web/20260505191404/https://www.ryans.com/category/desktop-component-keyboard"
   },
   "container": {
     "selector": "div.category-single-product",
@@ -10,19 +10,19 @@
   "pagination": {
     "type": "page_loop",
     "selector": "page",
-    "limit": 10
+    "limit": 5
   },
   "fields": [
     {
       "name": "Title",
-      "selector": "div.text-center span.list-view-text a",
+      "selector": "p.card-text a, div.text-center span.list-view-text a",
       "attr": "text",
       "filter": "custom",
       "formula": "trim | replace('|','')"
     },
     {
       "name": "Link",
-      "selector": "div.text-center span.list-view-text a",
+      "selector": "p.card-text a, div.text-center span.list-view-text a",
       "attr": "href",
       "filter": "none",
       "formula": ""

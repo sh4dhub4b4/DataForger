@@ -1,28 +1,28 @@
 {
   "meta": {
     "name": "PC_house_BD-SSD",
-    "url": "https://www.pchouse.com.bd/internal-ssd?limit=500"
+    "url": "https://www.pchouse.com.bd/internal-ssd?limit=50"
   },
   "container": {
-    "selector": "div.single-product-item",
+    "selector": "div.single-product-item, div.product-item-info",
     "type": "css"
   },
   "pagination": {
-    "type": "next_button",
-    "selector": "ul.pagination li a",
-    "limit": 10
+    "type": "page_loop",
+    "selector": "page",
+    "limit": 5
   },
   "fields": [
     {
       "name": "Title",
-      "selector": "div.product-item-info h4 a",
+      "selector": "div.product-item-info h4 a, h4 a",
       "attr": "text",
       "filter": "none",
       "formula": ""
     },
     {
       "name": "Link",
-      "selector": "div.product-item-info h4 a",
+      "selector": "div.product-item-info h4 a, h4 a",
       "attr": "href",
       "filter": "none",
       "formula": ""
@@ -36,14 +36,14 @@
     },
     {
       "name": "Price",
-      "selector": "div.price-info span:first-child",
+      "selector": "div.price-info span:first-child, span.price",
       "attr": "text",
-      "filter": "none",
+      "filter": "number",
       "formula": ""
     },
     {
       "name": "Status",
-      "selector": "button.buy-btn ",
+      "selector": "button.buy-btn",
       "attr": "text",
       "filter": "none",
       "formula": ""

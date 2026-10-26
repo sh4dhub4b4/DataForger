@@ -1,7 +1,7 @@
 {
   "meta": {
     "name": "Ryans_SSD",
-    "url": "https://www.ryans.com/category/internal-ssd?limit=200"
+    "url": "https://web.archive.org/web/20261014073730/https://www.ryans.com/category/internal-ssd"
   },
   "container": {
     "selector": "div.category-single-product",
@@ -10,19 +10,19 @@
   "pagination": {
     "type": "page_loop",
     "selector": "page",
-    "limit": 2
+    "limit": 5
   },
   "fields": [
     {
       "name": "Title",
-      "selector": "span.list-view-text a",
+      "selector": "p.card-text a, div.text-center span.list-view-text a",
       "attr": "text",
       "filter": "custom",
       "formula": "trim | replace('|','')"
     },
     {
       "name": "Link",
-      "selector": "span.list-view-text a",
+      "selector": "p.card-text a, div.text-center span.list-view-text a",
       "attr": "href",
       "filter": "none",
       "formula": ""

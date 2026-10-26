@@ -1,7 +1,7 @@
 {
   "meta": {
     "name": "UCC_Mouse",
-    "url": "https://www.ucc.com.bd/optical-mouse?limit=500"
+    "url": "https://www.ucc.com.bd/mice?limit=500"
   },
   "container": {
     "selector": "div.product-thumb",

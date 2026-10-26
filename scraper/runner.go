@@ -38,8 +38,6 @@ func deduceVendorAndCategory(configName, folderName string) (string, string) {
 		vendor = "Potaka IT"
 	case strings.Contains(lower, "ucc"):
 		vendor = "UCC"
-	case strings.Contains(lower, "selltech"):
-		vendor = "SellTech"
 	case strings.Contains(lower, "ultratech"):
 		vendor = "UltraTech"
 	default:

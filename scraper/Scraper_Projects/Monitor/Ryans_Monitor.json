@@ -1,7 +1,7 @@
 {
   "meta": {
     "name": "Ryans_Monitor",
-    "url": "https://www.ryans.com/category/monitor-all-monitor?limit=100"
+    "url": "https://web.archive.org/web/20261014054805/https://www.ryans.com/category/monitor-all-monitor"
   },
   "container": {
     "selector": "div.category-single-product",
@@ -15,22 +15,22 @@
   "fields": [
     {
       "name": "Title",
-      "selector": "p.card-text:nth-child(2) a",
+      "selector": "p.card-text a, div.text-center span.list-view-text a",
       "attr": "text",
       "filter": "custom",
       "formula": "trim | replace('|','')"
     },
     {
       "name": "Link",
-      "selector": "p.card-text a",
+      "selector": "p.card-text a, div.text-center span.list-view-text a",
       "attr": "href",
       "filter": "none",
       "formula": ""
     },
     {
       "name": "Image",
-      "selector": "div.image-box a img::attr(src)",
-      "attr": "none",
+      "selector": "img",
+      "attr": "src",
       "filter": "none",
       "formula": ""
     },

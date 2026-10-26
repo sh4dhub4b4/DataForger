@@ -1,7 +1,7 @@
 {
   "meta": {
     "name": "PCHouse_Laptop",
-    "url": "https://www.pchouse.com.bd/laptop-notebook?limit=500"
+    "url": "https://www.pchouse.com.bd/laptops?limit=50"
   },
   "container": {
     "selector": "div.single-product-item, div.product-item-info",
