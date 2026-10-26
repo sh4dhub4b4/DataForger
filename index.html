@@ -1,373 +1,397 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https:; img-src 'self' https: http: data: blob:; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https:; img-src 'self' https: http: data: blob:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none';">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta name="referrer" content="no-referrer">
-  <title>TechPulse BD — Centralized Hardware Intelligence & Community Radar</title>
+  <title>TechPulse BD — Centralized Hardware Intelligence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Inter"', '"Plus Jakarta Sans"', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'monospace'],
-          },
-          colors: {
-            radar: {
-              base: '#0B0F14',
-              surface: '#111821',
-              raised: '#18232F',
-              border: '#2A3745',
-              signal: '#77D4FF',
-              emerald: '#34D399',
-              amber: '#F5B94C',
-              rose: '#F87171',
-              alert: '#C0A4FF',
-              muted: '#A7B4C3'
-            },
-            brand: {
-              emerald: '#34d399',
-              cyan: '#77d4ff',
-              amber: '#f5b94c',
-              rose: '#f87171',
-            },
-            dark: {
-              950: '#0b0f14',
-              900: '#111821',
-              850: '#18232f',
-              800: '#202d3c',
-              700: '#2a3745',
-              600: '#3a4b5e',
-            }
-          }
-        }
-      }
-    }
-  </script>
   <style>
-    :root {
-      --radar-base: #0B0F14;
-      --radar-surface: #111821;
-      --radar-raised: #18232F;
-      --radar-border: #2A3745;
-      --radar-signal: #77D4FF;
-      --radar-emerald: #34D399;
-      --radar-amber: #F5B94C;
-      --radar-rose: #F87171;
-      --radar-muted: #A7B4C3;
-    }
     body {
-      background-color: var(--radar-base);
-      background-image: 
-        radial-gradient(rgba(119, 212, 255, 0.035) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(17, 24, 33, 0.9), var(--radar-base));
-      background-size: 24px 24px, 100% 100%;
-      background-attachment: fixed;
-      color: #e2e8f0;
+      background-color: #f8fafc;
+      color: #0f172a;
       font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
     }
     .custom-scrollbar::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
+      width: 6px;
+      height: 6px;
     }
     .custom-scrollbar::-webkit-scrollbar-track {
-      background: #0b0f14;
+      background: #f8fafc;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #2a3745;
+      background: #cbd5e1;
       border-radius: 4px;
     }
-    .cyber-card {
-      background: linear-gradient(145deg, rgba(17, 24, 33, 0.97), rgba(11, 15, 20, 0.98));
-      border: 1px solid rgba(42, 55, 69, 0.8);
-      box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.65);
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
     }
-    .cyber-card:hover {
-      border-color: rgba(119, 212, 255, 0.4);
-      box-shadow: 0 6px 20px -4px rgba(119, 212, 255, 0.08);
+    .shadcn-card {
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
     }
-    .nav-pill-active {
-      background-color: #202d3c;
-      color: #ffffff;
-      border-color: #77d4ff;
+    .shadcn-card:hover {
+      border-color: #cbd5e1;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06);
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans selection:bg-brand-cyan selection:text-black">
+<body class="min-h-screen flex flex-col font-sans selection:bg-slate-200 selection:text-slate-900 bg-slate-50 text-slate-900">
 
-  <!-- TOP BANNER: BANGLADESH RETAIL MARKET NOTICE -->
-  <aside class="bg-dark-900 border-b border-dark-700/80 px-4 py-1.5 text-[11px] font-mono text-slate-300 flex items-center justify-between">
-    <div class="max-w-7xl mx-auto w-full flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <span class="inline-flex items-center px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold text-[10px]">
-          LIVE BST 11:00 AM
-        </span>
-        <span class="hidden sm:inline text-slate-400">Bangladesh Computer Hardware Index: Star Tech, Tech Land, Ryans & 8 Stores</span>
-      </div>
-      <div class="flex items-center space-x-4 text-slate-400 text-[11px]">
-        <span>Dollar Rate: <strong>$1 ≈ ৳124.50</strong></span>
-        <span class="text-slate-600">|</span>
-        <span class="text-emerald-400 flex items-center gap-1">
-          <i data-lucide="check-circle" class="w-3 h-3"></i>
-          Official Warranty Verified
-        </span>
-      </div>
-    </div>
-  </aside>
-
-  <!-- MAIN TOPBAR NAVIGATION -->
-  <header class="border-b border-dark-700 bg-dark-950/95 sticky top-0 z-40 backdrop-blur">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-15 flex items-center justify-between gap-4 py-2">
+  <!-- MAIN TOPBAR NAVIGATION (COMPACT & MINIMAL) -->
+  <header class="border-b border-slate-200 bg-white/95 sticky top-0 z-40 backdrop-blur">
+    <div class="w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 flex items-center justify-between gap-4 py-2">
       
       <!-- Brand & Direct Navigation Tabs -->
       <div class="flex items-center space-x-3.5 flex-shrink-0">
-        <!-- Brand Logo (Safe Link - Resets to Hardware Feed & Top) -->
+        <!-- Brand Logo -->
         <a
           href="javascript:void(0)"
           onclick="switchMainFeedMode('HARDWARE'); window.scrollTo({top:0, behavior:'smooth'});"
-          class="flex items-center space-x-2.5 group cursor-pointer"
-          title="TechPulse BD — Hardware Radar Home"
+          class="flex items-center space-x-2 group cursor-pointer"
+          title="TechPulse BD"
         >
-          <div class="h-9 w-9 rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 p-0.5 flex items-center justify-center shadow-lg shadow-cyan-950">
-            <div class="h-full w-full bg-dark-950 rounded-[7px] flex items-center justify-center font-mono font-black text-cyan-400 text-sm">
-              TP
-            </div>
+          <div class="h-7 w-7 rounded-md bg-slate-900 text-white flex items-center justify-center font-mono font-bold text-xs shadow-xs">
+            TP
           </div>
-          <div class="flex flex-col">
-            <div class="flex items-center space-x-1.5">
-              <span class="text-base font-extrabold tracking-tight text-white group-hover:text-cyan-400 transition">TechPulse BD</span>
-              <span class="text-[9px] font-mono px-1 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-800 font-bold">RADAR v2.5</span>
-            </div>
-            <span class="text-[10px] font-mono text-slate-400">Bangladesh PC Price Intelligence</span>
-          </div>
+          <span class="text-sm font-bold tracking-tight text-slate-900 group-hover:text-blue-600 transition">TechPulse BD</span>
         </a>
 
         <!-- Header Nav Mode Switcher: 4-Room Architecture -->
-        <nav class="flex items-center space-x-1 bg-dark-900 border border-dark-700/80 p-0.5 rounded-lg text-xs font-mono">
+        <nav class="flex items-center space-x-1 bg-slate-100 border border-slate-200 p-0.5 rounded-lg text-xs font-medium">
           <button
             id="header-nav-catalog"
             onclick="switchMainFeedMode('CATALOG')"
-            class="px-2.5 py-1 rounded-md font-bold flex items-center space-x-1.5 transition text-white bg-dark-800 shadow-sm border border-dark-600 cursor-pointer"
-            title="Browse Geizhals-style Hardware Catalog & Specifications"
+            class="px-2.5 py-1 rounded-md font-medium flex items-center space-x-1.5 transition text-white bg-slate-900 shadow-xs border border-slate-900 cursor-pointer min-h-[30px]"
+            title="Browse Hardware Catalog & Specifications"
           >
-            <i data-lucide="layers" class="w-3.5 h-3.5 text-cyan-400"></i>
+            <i data-lucide="layers" class="w-3.5 h-3.5 text-slate-300"></i>
             <span class="hidden md:inline">Catalog</span>
           </button>
           <button
             id="header-nav-builder"
             onclick="switchMainFeedMode('BUILD_LAB')"
-            class="px-2.5 py-1 rounded-md font-semibold flex items-center space-x-1.5 transition text-slate-400 hover:text-white hover:bg-dark-850 cursor-pointer"
-            title="PCPartPicker-style Interactive PC Build Lab with Socket Compatibility"
+            class="px-2.5 py-1 rounded-md font-medium flex items-center space-x-1.5 transition text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 cursor-pointer min-h-[30px]"
+            title="Interactive PC Build Lab with Socket Compatibility"
           >
-            <i data-lucide="wrench" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <i data-lucide="wrench" class="w-3.5 h-3.5 text-slate-500"></i>
             <span class="hidden md:inline">Build Lab</span>
-            <span id="nav-build-count" class="hidden px-1 py-0.2 rounded bg-emerald-950 text-emerald-400 text-[9px] font-bold border border-emerald-800">0</span>
+            <span id="nav-build-count" class="hidden px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-mono font-semibold border border-emerald-200">0</span>
           </button>
           <button
             id="header-nav-radar"
             onclick="switchMainFeedMode('PRICE_RADAR')"
-            class="px-2.5 py-1 rounded-md font-semibold flex items-center space-x-1.5 transition text-slate-400 hover:text-white hover:bg-dark-850 cursor-pointer"
-            title="Idealo-style Bangladesh Market Price Alerts & Drops"
+            class="px-2.5 py-1 rounded-md font-medium flex items-center space-x-1.5 transition text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 cursor-pointer min-h-[30px]"
+            title="Market Price Alerts & Drops"
           >
-            <i data-lucide="activity" class="w-3.5 h-3.5 text-amber-400"></i>
+            <i data-lucide="activity" class="w-3.5 h-3.5 text-slate-500"></i>
             <span class="hidden md:inline">Price Radar</span>
           </button>
           <button
             id="header-nav-community"
             onclick="switchMainFeedMode('COMMUNITY')"
-            class="px-2.5 py-1 rounded-md font-semibold flex items-center space-x-1.5 transition text-slate-400 hover:text-white hover:bg-dark-850 cursor-pointer"
-            title="HardwareLuxx-style BD Community Discussions & Deal Alerts"
+            class="px-2.5 py-1 rounded-md font-medium flex items-center space-x-1.5 transition text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 cursor-pointer min-h-[30px]"
+            title="Community Discussions & Deal Alerts"
           >
-            <i data-lucide="messages-square" class="w-3.5 h-3.5 text-cyan-300"></i>
+            <i data-lucide="messages-square" class="w-3.5 h-3.5 text-slate-500"></i>
             <span class="hidden md:inline">Community</span>
-            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
           </button>
         </nav>
       </div>
 
       <!-- Real-time Hardware Search Input -->
-      <div class="flex-1 max-w-xl relative">
-        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-          <i data-lucide="search" class="w-4 h-4"></i>
+      <div class="flex-1 max-w-lg relative">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+          <i data-lucide="search" class="w-3.5 h-3.5"></i>
         </div>
         <input
           id="global-search"
           type="text"
           aria-label="Search PC hardware components across Bangladesh retailers"
-          placeholder="Search components: 'Redmi G27Q 320Hz', 'Samsung 980 Pro 1TB', 'Gigabyte 2K'..."
-          class="w-full pl-10 pr-9 py-2 bg-dark-900 border border-dark-700 rounded-lg text-xs text-white placeholder-slate-400 font-mono focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+          placeholder="Search components: 'Redmi G27Q', 'Samsung 980 Pro', 'Ryzen 7600'..."
+          class="w-full pl-9 pr-8 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 transition"
           oninput="handleSearch()"
         />
-        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-500 font-mono text-[10px]">
-          <kbd class="px-1.5 py-0.5 border border-dark-700 rounded bg-dark-800">/</kbd>
+        <div class="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none text-slate-400 font-mono text-[10px]">
+          <kbd class="px-1.5 py-0.5 border border-slate-200 rounded bg-white text-slate-500 text-[10px]">⌘K</kbd>
         </div>
       </div>
 
       <!-- Top Right: Social User Profile -->
-      <div class="flex items-center space-x-2.5 text-xs font-mono">
+      <div class="flex items-center space-x-2 text-xs">
         <!-- Social User Auth Pill / Button -->
         <div id="user-auth-section">
-          <button onclick="openAuthModal()" class="px-3.5 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 text-white font-medium border border-dark-700 transition flex items-center space-x-1.5 shadow-sm">
-            <i data-lucide="user-plus" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <button onclick="openAuthModal()" class="px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-700 font-medium border border-slate-200 transition flex items-center space-x-1.5 shadow-2xs min-h-[32px]">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5 text-slate-500"></i>
             <span>Sign In</span>
           </button>
         </div>
       </div>
 
     </div>
-
-    <!-- Category Tabs Bar with Spec Filters -->
-    <div class="border-t border-dark-800 bg-dark-900/80 px-4 sm:px-6 lg:px-8">
-      <div class="max-w-7xl mx-auto flex items-center justify-between text-xs font-mono py-1.5 overflow-x-auto custom-scrollbar gap-4">
-        
-        <!-- Pricing Model Switcher (Bangladesh Retail Engine) -->
-        <div class="flex items-center space-x-1 flex-shrink-0 bg-dark-950 p-0.5 rounded-lg border border-dark-700">
-          <button
-            id="price-mode-cash"
-            onclick="setPriceComparisonMode('CASH')"
-            class="px-2.5 py-1 rounded text-[11px] font-bold text-white bg-dark-800 border border-emerald-500/50 flex items-center space-x-1.5 shadow-sm transition"
-            title="Sort & Display by Cash Special Price (Bank / bKash / Cash discount)"
-          >
-            <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
-            <span>Cash Special</span>
-          </button>
-          <button
-            id="price-mode-card"
-            onclick="setPriceComparisonMode('CARD')"
-            class="px-2.5 py-1 rounded text-[11px] font-medium text-slate-400 hover:text-white transition flex items-center space-x-1.5"
-            title="Sort & Display by Regular Card POS / EMI Price"
-          >
-            <span class="h-2 w-2 rounded-full bg-slate-600"></span>
-            <span>Card POS / EMI</span>
-          </button>
-        </div>
-
-        <!-- Hardware Category Badges -->
-        <div id="category-pills-row" class="flex items-center space-x-1 flex-shrink-0 text-[11px] text-slate-400">
-          <button onclick="setCategoryFilter('ALL')" class="category-tab px-2.5 py-0.5 rounded text-white bg-dark-800 font-semibold cursor-pointer" data-cat="ALL">
-            All Feed (<span id="header-product-count">--</span>)
-          </button>
-          <button onclick="setCategoryFilter('Monitor')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition cursor-pointer" data-cat="Monitor">
-            Monitors (<span id="count-monitors">--</span>)
-          </button>
-          <button onclick="setCategoryFilter('SSD')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition cursor-pointer" data-cat="SSD">
-            SSDs (<span id="count-ssds">--</span>)
-          </button>
-          <button onclick="setCategoryFilter('Laptop')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition cursor-pointer" data-cat="Laptop">
-            Laptops (<span id="count-laptops">--</span>)
-          </button>
-          <button onclick="setCategoryFilter('Keyboard')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition cursor-pointer" data-cat="Keyboard">
-            Keyboards (<span id="count-keyboards">--</span>)
-          </button>
-          <button onclick="setCategoryFilter('Mouse')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition cursor-pointer" data-cat="Mouse">
-            Mice (<span id="count-mice">--</span>)
-          </button>
-          <button onclick="setCategoryFilter('Processor')" class="category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition cursor-pointer" data-cat="Processor">
-            Processors (<span id="count-processors">--</span>)
-          </button>
-        </div>
-
-      </div>
-    </div>
   </header>
 
-  <!-- SECONDARY SPEC FILTER & FACET BAR (GEIZHALS PARAMETRIC SYSTEM) -->
-  <section class="bg-dark-950 border-b border-dark-800 px-4 sm:px-6 lg:px-8 py-2.5 text-xs font-mono">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-slate-400">
-      
-      <!-- Parametric Facet Filter Tags -->
-      <div class="flex items-center flex-wrap gap-1.5" id="spec-filter-pills">
-        <span class="text-slate-500 font-bold uppercase text-[10px] mr-1">Parametric Specs:</span>
-        <button onclick="applyQuickSpec('AM5')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
-          AM5 Socket
-        </button>
-        <button onclick="applyQuickSpec('LGA1700')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
-          LGA1700
-        </button>
-        <button onclick="applyQuickSpec('144Hz+')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
-          144Hz+ High Refresh
-        </button>
-        <button onclick="applyQuickSpec('IPS')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
-          Fast IPS / OLED
-        </button>
-        <button onclick="applyQuickSpec('1TB')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
-          1TB+ NVMe
-        </button>
-        <button onclick="applyQuickSpec('Gen4')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
-          PCIe 4.0
-        </button>
-        <button onclick="applyQuickSpec('Mechanical')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
-          Mechanical Switch
-        </button>
-        <button onclick="applyQuickSpec('Wireless')" class="spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px] transition">
-          Wireless 2.4G
-        </button>
+  <!-- MAIN 2-COLUMN LAYOUT: LEFT FILTER RAIL (PCPartPicker/Geizhals) & RIGHT FEED -->
+  <main class="flex-1 w-full px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 py-4">
+    
+    <!-- Mobile Filter Toggle Bar (< lg screens) -->
+    <div class="lg:hidden flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg mb-4 shadow-2xs">
+      <div class="flex items-center space-x-2 text-xs text-slate-700">
+        <span class="font-semibold text-slate-900" id="mobile-filter-status">Catalog Feed</span>
+        <span class="text-slate-300">•</span>
+        <span class="text-slate-500" id="mobile-product-count">All stores</span>
       </div>
-
-      <!-- Retailer & Sort Selectors -->
-      <div class="flex items-center flex-wrap gap-3 ml-auto text-[11px]">
-        <!-- In-Stock Filter Checkbox -->
-        <label class="flex items-center space-x-1.5 cursor-pointer text-slate-300 hover:text-white select-none py-1 px-2 rounded bg-dark-900 border border-dark-700 hover:border-dark-600 transition">
-          <input
-            type="checkbox"
-            id="feed-in-stock-only"
-            onchange="applyFilters()"
-            class="rounded bg-dark-800 border-dark-600 text-cyan-500 focus:ring-0 cursor-pointer w-3.5 h-3.5"
-          />
-          <span class="font-medium text-slate-300">Exclude Out of Stock</span>
-        </label>
-
-        <div class="flex items-center space-x-1.5">
-          <span>Retailer:</span>
-          <select id="feed-vendor-filter" onchange="applyFilters()" class="bg-dark-900 border border-dark-700 rounded px-2 py-1 text-white text-[11px] focus:outline-none focus:border-cyan-500">
-            <option value="ALL">All Stores (Star Tech, Tech Land, Ryans...)</option>
-            <option value="Star Tech">Star Tech</option>
-            <option value="Tech Land">Tech Land</option>
-            <option value="Ryans">Ryans</option>
-            <option value="PC House BD">PC House BD</option>
-            <option value="Computer Village">Computer Village</option>
-            <option value="Potaka IT">Potaka IT</option>
-            <option value="UCC">UCC</option>
-            <option value="BDstall">BDstall</option>
-            <option value="Binary Logic">Binary Logic</option>
-          </select>
-        </div>
-
-        <div class="flex items-center space-x-1.5">
-          <span>Sort By:</span>
-          <select id="feed-sort-filter" onchange="applyFilters()" class="bg-dark-900 border border-dark-700 rounded px-2 py-1 text-white text-[11px] focus:outline-none focus:border-cyan-500">
-            <option value="NEWEST">Recently Crawled</option>
-            <option value="PRICE_ASC">Price: Low to High</option>
-            <option value="PRICE_DESC">Price: High to Low</option>
-          </select>
-        </div>
-      </div>
-
+      <button
+        onclick="toggleMobileFilters()"
+        class="px-3 py-1.5 rounded-md bg-slate-900 text-white text-xs font-medium flex items-center space-x-1.5 shadow-xs"
+      >
+        <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+        <span>Filters & Specs</span>
+      </button>
     </div>
-  </section>
 
-  <!-- MAIN 2-COLUMN COMMUNITY LAYOUT -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
       
-      <!-- LEFT COLUMN: HARDWARE & DISCUSSION FEED (8 Cols) -->
-      <section class="lg:col-span-8 space-y-4">
+      <!-- LEFT COLUMN: FILTER RAIL -->
+      <aside id="filter-sidebar" class="hidden lg:block lg:col-span-4 xl:col-span-3 2xl:col-span-2 space-y-3 sticky top-16 max-h-[calc(100vh-4.5rem)] overflow-y-auto custom-scrollbar pr-1 pb-6">
+        
+        <!-- Main Filter Card -->
+        <div class="bg-white border border-slate-200 rounded-lg p-3.5 space-y-3 shadow-2xs">
+          
+          <!-- Filter Header with Reset -->
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div class="flex items-center space-x-2 text-xs font-semibold text-slate-900">
+              <i data-lucide="sliders" class="w-4 h-4 text-slate-600"></i>
+              <span>Filters & Specs</span>
+            </div>
+            <button
+              onclick="resetAllFilters()"
+              class="text-[11px] font-medium text-slate-500 hover:text-slate-900 transition hover:underline"
+              title="Reset all filters"
+            >
+              Reset All
+            </button>
+          </div>
+
+          <!-- Section 1: Bangladesh Pricing Mode Switcher -->
+          <div class="space-y-1.5">
+            <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Pricing Model</div>
+            <div class="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
+              <button
+                id="price-mode-cash"
+                onclick="setPriceComparisonMode('CASH')"
+                class="py-1.5 px-2 rounded-md text-xs font-semibold text-slate-900 bg-white border border-slate-200 shadow-2xs flex items-center justify-center space-x-1.5 transition min-h-[30px]"
+                title="Sort & Display by Cash Special Price (Bank / bKash / Cash discount)"
+              >
+                <span class="h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                <span class="truncate">Cash Special</span>
+              </button>
+              <button
+                id="price-mode-card"
+                onclick="setPriceComparisonMode('CARD')"
+                class="py-1.5 px-2 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition flex items-center justify-center space-x-1.5 min-h-[30px]"
+                title="Sort & Display by Regular Card POS / EMI Price"
+              >
+                <span class="h-2 w-2 rounded-full bg-slate-400 flex-shrink-0"></span>
+                <span class="truncate">Card / EMI</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 2: Hardware Categories (Vertical Rail) -->
+          <div class="space-y-1 pt-2 border-t border-slate-100">
+            <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Category</div>
+            <div id="category-pills-row" class="flex flex-col space-y-1 text-xs text-slate-600">
+              <button onclick="setCategoryFilter('ALL')" class="category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-white bg-slate-900 border border-slate-900 font-medium cursor-pointer transition min-h-[32px]" data-cat="ALL">
+                <span>All Components</span>
+                <span id="header-product-count" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 text-[11px] font-mono">--</span>
+              </button>
+              <button onclick="setCategoryFilter('Processor')" class="category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]" data-cat="Processor">
+                <span>Processors</span>
+                <span id="count-processors" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono">--</span>
+              </button>
+              <button onclick="setCategoryFilter('Monitor')" class="category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]" data-cat="Monitor">
+                <span>Monitors</span>
+                <span id="count-monitors" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono">--</span>
+              </button>
+              <button onclick="setCategoryFilter('SSD')" class="category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]" data-cat="SSD">
+                <span>SSDs & NVMe</span>
+                <span id="count-ssds" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono">--</span>
+              </button>
+              <button onclick="setCategoryFilter('Laptop')" class="category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]" data-cat="Laptop">
+                <span>Laptops</span>
+                <span id="count-laptops" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono">--</span>
+              </button>
+              <button onclick="setCategoryFilter('Keyboard')" class="category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]" data-cat="Keyboard">
+                <span>Keyboards</span>
+                <span id="count-keyboards" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono">--</span>
+              </button>
+              <button onclick="setCategoryFilter('Mouse')" class="category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]" data-cat="Mouse">
+                <span>Mice</span>
+                <span id="count-mice" class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono">--</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 3: Availability & Retailers -->
+          <div class="space-y-2 pt-2 border-t border-slate-100 text-xs">
+            <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Availability & Retailer</div>
+            
+            <!-- Multi-Store Comparison Grouping Toggle -->
+            <label class="flex items-center space-x-2 cursor-pointer text-slate-700 hover:text-slate-900 select-none py-1.5 px-2 rounded-md hover:bg-slate-50 border border-slate-200 transition" title="Compare identical components across multiple stores side-by-side">
+              <input
+                type="checkbox"
+                id="feed-group-multistore"
+                checked
+                onchange="applyFilters()"
+                class="rounded bg-white border-slate-300 text-slate-900 focus:ring-0 cursor-pointer w-3.5 h-3.5"
+              />
+              <span class="font-medium text-slate-700 text-xs">Multi-Store Price Match</span>
+            </label>
+
+            <!-- In-Stock Filter Checkbox -->
+            <label class="flex items-center space-x-2 cursor-pointer text-slate-700 hover:text-slate-900 select-none py-1.5 px-2 rounded-md hover:bg-slate-50 border border-slate-200 transition">
+              <input
+                type="checkbox"
+                id="feed-in-stock-only"
+                onchange="applyFilters()"
+                class="rounded bg-white border-slate-300 text-slate-900 focus:ring-0 cursor-pointer w-3.5 h-3.5"
+              />
+              <span class="font-medium text-slate-700 text-xs">In Stock Only</span>
+            </label>
+
+            <!-- Retailer Select -->
+            <div class="space-y-1">
+              <label class="text-[11px] text-slate-500">Retailer:</label>
+              <select id="feed-vendor-filter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5 text-slate-800 text-xs focus:bg-white focus:outline-none focus:border-slate-400 min-h-[32px]">
+                <option value="ALL">All Stores (Star Tech, Tech Land, Ryans...)</option>
+                <option value="Star Tech">Star Tech</option>
+                <option value="Tech Land">Tech Land</option>
+                <option value="Ryans">Ryans</option>
+                <option value="PC House BD">PC House BD</option>
+                <option value="Computer Village">Computer Village</option>
+                <option value="Potaka IT">Potaka IT</option>
+                <option value="UCC">UCC</option>
+                <option value="BDstall">BDstall</option>
+                <option value="Binary Logic">Binary Logic</option>
+              </select>
+            </div>
+
+            <!-- Sort Select -->
+            <div class="space-y-1">
+              <label class="text-[11px] text-slate-500">Sort By:</label>
+              <select id="feed-sort-filter" onchange="applyFilters()" class="w-full bg-slate-50 border border-slate-200 rounded-md px-2 py-1.5 text-slate-800 text-xs focus:bg-white focus:outline-none focus:border-slate-400 min-h-[32px]">
+                <option value="NEWEST">Recently Crawled</option>
+                <option value="PRICE_ASC">Price: Low to High</option>
+                <option value="PRICE_DESC">Price: High to Low</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Section 4: Parametric Quick Specs -->
+          <div id="spec-filters-block" class="space-y-1.5 pt-2 border-t border-slate-100 text-xs spec-filter-section">
+            <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Quick Spec Filters</div>
+            <div class="flex items-center flex-wrap gap-1" id="spec-filter-pills">
+              <button onclick="applyQuickSpec('AM5')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+                AM5
+              </button>
+              <button onclick="applyQuickSpec('LGA1700')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+                LGA1700
+              </button>
+              <button onclick="applyQuickSpec('144Hz+')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+                144Hz+
+              </button>
+              <button onclick="applyQuickSpec('IPS')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+                IPS/OLED
+              </button>
+              <button onclick="applyQuickSpec('1TB')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+                1TB+ NVMe
+              </button>
+              <button onclick="applyQuickSpec('Gen4')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+                PCIe 4.0
+              </button>
+              <button onclick="applyQuickSpec('Mechanical')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+                Mechanical
+              </button>
+              <button onclick="applyQuickSpec('Wireless')" class="spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition">
+                Wireless
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Sidebar User Card & Live Chatter -->
+        <div class="space-y-3">
+          <!-- Active User Profile Status Widget -->
+          <div id="sidebar-user-card" class="hidden bg-white border border-slate-200 rounded-lg p-3.5 space-y-2.5 shadow-2xs">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2.5">
+                <div id="sidebar-user-avatar" class="h-8 w-8 rounded-full bg-slate-900 text-white font-semibold flex items-center justify-center text-xs font-mono shadow-xs">
+                  U
+                </div>
+                <div>
+                  <div id="sidebar-user-name" class="text-xs font-semibold text-slate-900 cursor-pointer hover:underline" onclick="openUserProfileModal(currentUser.username)">@Username</div>
+                  <div id="sidebar-user-phone" class="text-[11px] text-slate-500 font-mono">017••••5678</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-[10px] text-slate-400 uppercase tracking-wider">Rep</div>
+                <div id="sidebar-user-rep" class="text-xs font-bold font-mono text-emerald-700">25 PTS</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Community Reviews Card -->
+          <div class="bg-white border border-slate-200 rounded-lg p-3.5 space-y-2.5 shadow-2xs">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span class="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
+                <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                Live Buyer Feedback
+              </span>
+              <button
+                onclick="openReviewModal()"
+                class="text-[11px] text-emerald-700 hover:text-emerald-800 font-medium flex items-center space-x-1"
+                title="Write a verified store review"
+              >
+                <span>+ Write Review</span>
+              </button>
+            </div>
+
+            <div id="live-reviews-ticker" class="space-y-2 max-h-[220px] overflow-y-auto custom-scrollbar pr-0.5">
+              <div class="text-xs text-slate-400 py-2">Streaming community reviews...</div>
+            </div>
+          </div>
+
+          <!-- Retail Hubs Info -->
+          <div class="p-3 bg-slate-100/70 border border-slate-200 rounded-lg text-[11px] text-slate-500 space-y-1">
+            <div class="font-medium text-slate-700 flex items-center justify-between">
+              <span>Covered Hubs:</span>
+              <span class="text-emerald-700 font-mono">10 BD Retailers</span>
+            </div>
+            <div>Elephant Rd, Multiplan, IDB Bhaban, Uttara, Agrabad CTG</div>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- RIGHT COLUMN: MAIN CONTENT CANVAS -->
+      <section class="lg:col-span-8 xl:col-span-9 2xl:col-span-10 space-y-3.5">
         
         <!-- SOCIAL POST COMPOSER (Active on Community Mode) -->
-        <div id="community-post-composer" class="hidden bg-dark-900 border border-dark-700 rounded-xl p-4 shadow-sm space-y-3">
-          <div class="flex items-center space-x-2 text-xs font-bold text-white border-b border-dark-700 pb-2">
-            <i data-lucide="edit-3" class="w-4 h-4 text-emerald-400"></i>
+        <div id="community-post-composer" class="hidden bg-white border border-slate-200 rounded-lg p-5 shadow-xs space-y-3">
+          <div class="flex items-center space-x-2 text-xs font-semibold text-slate-900 border-b border-slate-200 pb-2.5">
+            <i data-lucide="edit-3" class="w-4 h-4 text-emerald-600"></i>
             <span>Create a Tech Discussion or Deal Alert</span>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -375,9 +399,9 @@
               id="post-title-input"
               type="text"
               placeholder="Topic title (e.g. Best 27-inch 144Hz monitor in BD right now?)"
-              class="sm:col-span-2 bg-dark-950 border border-dark-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-mono"
+              class="sm:col-span-2 bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-400"
             />
-            <select id="post-type-select" class="bg-dark-950 border border-dark-700 rounded-lg px-2.5 py-2 text-xs text-slate-300 font-mono focus:outline-none focus:border-cyan-500">
+            <select id="post-type-select" class="bg-slate-50 border border-slate-200 rounded-md px-2.5 py-2 text-xs text-slate-700 focus:bg-white focus:outline-none focus:border-slate-400">
               <option value="Discussion">Discussion</option>
               <option value="Deal Alert">Deal Alert</option>
               <option value="Build Help">Build Help</option>
@@ -388,13 +412,13 @@
             id="post-content-input"
             rows="3"
             placeholder="Share your experience with Bangladeshi stores, warranty claims, thermals, or ask advice from local builders..."
-            class="w-full bg-dark-950 border border-dark-700 rounded-lg p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-sans"
+            class="w-full bg-slate-50 border border-slate-200 rounded-md p-3 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-400 font-sans"
           ></textarea>
           <div class="flex items-center justify-between pt-1">
-            <span class="text-[10px] font-mono text-slate-500">Verified BD Mobile identity prevents seller bot spam</span>
+            <span class="text-[11px] text-slate-500">Verified BD Mobile identity prevents seller bot spam</span>
             <button
               onclick="submitCommunityPost()"
-              class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold transition flex items-center space-x-1.5 shadow"
+              class="px-4 py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition flex items-center space-x-1.5 shadow"
             >
               <span>Publish Thread</span>
               <i data-lucide="send" class="w-3.5 h-3.5"></i>
@@ -404,43 +428,43 @@
 
         <!-- BUILD LAB INTERACTIVE WORKSPACE (PCPartPicker Style) -->
         <div id="build-lab-view" class="hidden space-y-4">
-          <div class="bg-dark-900 border border-dark-700 rounded-xl p-5 shadow-sm space-y-4">
-            <div class="flex items-center justify-between border-b border-dark-700/80 pb-3 flex-wrap gap-2">
+          <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 flex-wrap gap-2">
               <div class="flex items-center space-x-3">
-                <div class="h-9 w-9 rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center justify-center">
-                  <i data-lucide="wrench" class="w-5 h-5"></i>
+                <div class="h-8 w-8 rounded-md bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center">
+                  <i data-lucide="wrench" class="w-4 h-4"></i>
                 </div>
                 <div>
-                  <h2 class="text-sm font-extrabold text-white tracking-wide uppercase font-mono">Custom PC Build Lab</h2>
-                  <p class="text-[11px] text-slate-400 font-mono">Assemble compatible components with live Bangladesh store totals</p>
+                  <h2 class="text-sm font-semibold text-slate-900 tracking-tight">Custom PC Build Lab</h2>
+                  <p class="text-xs text-slate-500">Assemble compatible components with live Bangladesh store totals</p>
                 </div>
               </div>
-              <div class="flex items-center space-x-3 font-mono">
+              <div class="flex items-center space-x-3">
                 <div class="text-right">
-                  <div class="text-[10px] text-slate-500 uppercase">Estimated Total Cost</div>
-                  <div id="build-lab-total-price" class="text-lg font-black text-emerald-400">৳ 0</div>
+                  <div class="text-[10px] text-slate-500 uppercase tracking-wider">Estimated Total Cost</div>
+                  <div id="build-lab-total-price" class="text-base font-bold text-emerald-700 font-mono">৳ 0</div>
                 </div>
-                <button onclick="clearCurrentBuild()" class="px-2.5 py-1 rounded bg-dark-800 hover:bg-dark-700 text-slate-400 text-xs border border-dark-700 transition" title="Clear build list">
+                <button onclick="clearCurrentBuild()" class="px-2.5 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs border border-slate-200 transition" title="Clear build list">
                   Clear
                 </button>
-                <button onclick="copyBuildSummary()" class="px-2.5 py-1 rounded bg-dark-800 hover:bg-dark-700 text-cyan-400 hover:text-cyan-300 text-xs border border-dark-700 transition flex items-center space-x-1" title="Copy build specs for forum or sharing">
-                  <i data-lucide="share-2" class="w-3 h-3"></i>
+                <button onclick="copyBuildSummary()" class="px-2.5 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs border border-slate-200 transition flex items-center space-x-1" title="Copy build specs for forum or sharing">
+                  <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
                   <span>Share</span>
                 </button>
               </div>
             </div>
 
             <!-- Socket Compatibility Notice Inspector -->
-            <div id="build-compatibility-box" class="p-3 rounded-lg bg-dark-950 border border-dark-700 text-xs font-mono flex items-start space-x-2.5">
-              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5"></i>
+            <div id="build-compatibility-box" class="p-3 rounded-md bg-slate-50 border border-slate-200 text-xs flex items-start space-x-2.5">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
               <div>
-                <span class="font-bold text-slate-200">Compatibility Inspector:</span>
-                <span id="build-compatibility-text" class="text-slate-400 ml-1">No hardware conflicts detected. Start selecting parts.</span>
+                <span class="font-semibold text-slate-800">Compatibility Inspector:</span>
+                <span id="build-compatibility-text" class="text-slate-600 ml-1">No hardware conflicts detected. Start selecting parts.</span>
               </div>
             </div>
 
             <!-- Build Component Slot Rows -->
-            <div id="build-lab-slots" class="space-y-2.5 text-xs font-mono">
+            <div id="build-lab-slots" class="space-y-2 text-xs">
               <!-- Rendered dynamically by app.js -->
             </div>
           </div>
@@ -448,19 +472,19 @@
 
         <!-- PRICE RADAR MARKET INTELLIGENCE VIEW (Idealo Style) -->
         <div id="price-radar-view" class="hidden space-y-4">
-          <div class="bg-dark-900 border border-dark-700 rounded-xl p-5 shadow-sm space-y-4">
-            <div class="flex items-center justify-between border-b border-dark-700/80 pb-3 flex-wrap gap-2">
+          <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 flex-wrap gap-2">
               <div class="flex items-center space-x-3">
-                <div class="h-9 w-9 rounded-lg bg-amber-950 text-amber-400 border border-amber-800 flex items-center justify-center">
-                  <i data-lucide="activity" class="w-5 h-5"></i>
+                <div class="h-8 w-8 rounded-md bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center">
+                  <i data-lucide="activity" class="w-4 h-4"></i>
                 </div>
                 <div>
-                  <h2 class="text-sm font-extrabold text-white tracking-wide uppercase font-mono">Bangladesh Price Radar</h2>
-                  <p class="text-[11px] text-slate-400 font-mono">Real-time dealer margins, deal dips & retailer discrepancies</p>
+                  <h2 class="text-sm font-semibold text-slate-900 tracking-tight">Bangladesh Price Radar</h2>
+                  <p class="text-xs text-slate-500">Real-time dealer margins, deal dips & retailer discrepancies</p>
                 </div>
               </div>
-              <div class="text-[11px] font-mono text-slate-400">
-                Tracking <span class="text-cyan-400 font-bold">8,600+</span> items across 10 BD stores
+              <div class="text-xs text-slate-600">
+                Tracking <span class="text-slate-900 font-semibold font-mono">8,600+</span> items across 10 BD stores
               </div>
             </div>
 
@@ -472,226 +496,173 @@
         </div>
 
         <!-- The Main Feed Container -->
-        <div id="hardware-feed" class="space-y-4">
-          <div class="p-8 text-center text-slate-500 font-mono text-xs border border-dashed border-dark-700 rounded-xl">
-            <i data-lucide="loader-2" class="w-5 h-5 mx-auto animate-spin mb-2 text-cyan-400"></i>
-            Loading live hardware feed from Supabase...
+        <div id="hardware-feed" class="space-y-3">
+          <div class="p-12 text-center text-slate-500 text-xs border border-dashed border-slate-200 rounded-lg bg-white">
+            <i data-lucide="loader-2" class="w-4 h-4 mx-auto animate-spin mb-2 text-slate-400"></i>
+            Loading live hardware catalog...
           </div>
         </div>
 
         <!-- Lazy Load Trigger / Load More Button -->
         <div id="lazy-sentinel" class="py-6 text-center">
-          <button id="btn-load-more" onclick="loadMoreProducts()" class="px-5 py-2.5 rounded-lg bg-dark-900 hover:bg-dark-850 text-xs font-mono border border-dark-700 hover:border-dark-600 text-slate-300 transition shadow">
-            Load More Hardware Listings ↓
+          <button id="btn-load-more" onclick="loadMoreProducts()" class="px-5 py-2.5 rounded-md bg-white hover:bg-slate-50 text-xs font-medium border border-slate-200 hover:border-slate-300 text-slate-700 transition shadow-sm min-h-[40px]">
+            Load More Products ↓
           </button>
         </div>
 
       </section>
 
-      <!-- RIGHT COLUMN: COMMUNITY SIDEBAR & TICKER (4 Cols) -->
-      <aside class="lg:col-span-4 space-y-5 sticky top-28">
-        
-        <!-- Active User Profile Status Widget -->
-        <div id="sidebar-user-card" class="hidden bg-dark-900 border border-dark-700 rounded-xl p-4 space-y-2.5 shadow-sm">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-              <div id="sidebar-user-avatar" class="h-10 w-10 rounded-full bg-emerald-600 text-white font-extrabold flex items-center justify-center text-sm font-mono border-2 border-dark-700 shadow">
-                U
-              </div>
-              <div>
-                <div id="sidebar-user-name" class="text-xs font-bold text-white font-mono cursor-pointer hover:underline" onclick="openUserProfileModal(currentUser.username)">@Username</div>
-                <div id="sidebar-user-phone" class="text-[10px] text-slate-400 font-mono">017••••5678</div>
-                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">Verified Builder</span>
-              </div>
-            </div>
-            <div class="text-right">
-              <div class="text-[10px] font-mono text-slate-400">Rep Score</div>
-              <div id="sidebar-user-rep" class="text-sm font-extrabold font-mono text-emerald-400">25 PTS</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Review Composer Widget -->
-        <div id="review-composer-card" class="bg-dark-900 border border-dark-700 rounded-xl p-4 shadow-sm space-y-3">
-          <div class="flex items-center justify-between border-b border-dark-700 pb-2.5">
-            <div class="flex items-center space-x-2">
-              <div class="h-6 w-6 rounded-md bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center justify-center text-xs font-bold font-mono">
-                BD
-              </div>
-              <span class="text-xs font-bold text-white tracking-wide">Leave Uncensored Review</span>
-            </div>
-            <span class="text-[10px] font-mono text-slate-500">Neutral Hub</span>
-          </div>
-
-          <!-- Product Picker -->
-          <div class="space-y-1">
-            <label class="text-[11px] font-mono text-slate-400">Target Component:</label>
-            <select id="composer-product-select" class="w-full bg-dark-950 border border-dark-700 rounded-lg px-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500 truncate">
-              <option value="">Select Hardware Item...</option>
-            </select>
-          </div>
-
-          <!-- Phone Number Auth Verification -->
-          <div class="space-y-1">
-            <label class="text-[11px] font-mono text-slate-400">Bangladeshi Phone (Verification):</label>
-            <input
-              id="composer-phone"
-              type="text"
-              placeholder="017XXXXXXXX or +8801XXXXXXXX"
-              class="w-full bg-dark-950 border border-dark-700 rounded-lg px-3 py-1.5 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-            />
-          </div>
-
-          <!-- Name & Star Rating -->
-          <div class="grid grid-cols-2 gap-2">
-            <input
-              id="composer-name"
-              type="text"
-              placeholder="Name / Handle"
-              class="bg-dark-950 border border-dark-700 rounded-lg px-3 py-1.5 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-            />
-            <select id="composer-rating" class="bg-dark-950 border border-dark-700 rounded-lg px-2 py-1.5 text-xs text-cyan-400 font-mono focus:outline-none focus:border-cyan-500">
-              <option value="5">Rating: 5 / 5 (Excellent)</option>
-              <option value="4">Rating: 4 / 5 (Good)</option>
-              <option value="3">Rating: 3 / 5 (Average)</option>
-              <option value="2">Rating: 2 / 5 (Fair)</option>
-              <option value="1">Rating: 1 / 5 (Poor)</option>
-            </select>
-          </div>
-
-          <!-- Review Body -->
-          <textarea
-            id="composer-text"
-            rows="3"
-            placeholder="Real build impressions: panel backlight bleed, warranty swap speed, thermals..."
-            class="w-full bg-dark-950 border border-dark-700 rounded-lg p-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
-          ></textarea>
-
-          <button
-            onclick="submitComposerReview()"
-            class="w-full py-2 rounded-lg bg-dark-800 hover:bg-dark-750 text-white font-mono text-xs font-bold border border-dark-600 transition flex items-center justify-center space-x-1.5 shadow"
-          >
-            <i data-lucide="send" class="w-3.5 h-3.5 text-emerald-400"></i>
-            <span>Publish Review to Radar</span>
-          </button>
-        </div>
-
-        <!-- Live Community Reviews Ticker -->
-        <div class="bg-dark-900 border border-dark-700 rounded-xl p-4 space-y-3 shadow-sm">
-          <div class="flex items-center justify-between border-b border-dark-700 pb-2">
-            <span class="text-xs font-bold text-white tracking-wide flex items-center gap-1.5">
-              <span class="h-2 w-2 rounded-full bg-cyan-400 animate-pulse"></span>
-              Live Community Chatter
-            </span>
-            <span class="text-[10px] font-mono text-slate-500">Real Buyers in BD</span>
-          </div>
-
-          <div id="live-reviews-ticker" class="space-y-3 max-h-[340px] overflow-y-auto custom-scrollbar pr-1">
-            <div class="text-xs text-slate-500 font-mono py-2">Streaming community reviews...</div>
-          </div>
-        </div>
-
-        <!-- Market Reality & Branch Info Box -->
-        <div class="bg-dark-900/70 border border-dark-700/80 rounded-xl p-4 text-xs font-mono space-y-2.5 shadow-sm">
-          <div class="text-slate-300 font-bold flex items-center justify-between border-b border-dark-700 pb-2">
-            <span>Bangladesh Retail Hubs</span>
-            <span class="text-emerald-400 text-[10px] bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-800">48h Delivery</span>
-          </div>
-          <div class="text-[11px] text-slate-400 space-y-1.5 leading-relaxed">
-            <div class="flex justify-between">
-              <span>Star Tech Hubs:</span>
-              <strong class="text-slate-200">IDB, Multiplan, Uttara, CTG</strong>
-            </div>
-            <div class="flex justify-between">
-              <span>Tech Land Hubs:</span>
-              <strong class="text-slate-200">Multiplan Center, Level 5</strong>
-            </div>
-            <div class="flex justify-between">
-              <span>Ryans Computers:</span>
-              <strong class="text-slate-200">Kakrail, Banani, Motijheel</strong>
-            </div>
-            <div class="flex justify-between pt-1 border-t border-dark-800">
-              <span>Commission Model:</span>
-              <strong class="text-cyan-400">3.0% Affiliate Referral</strong>
-            </div>
-          </div>
-        </div>
-
-      </aside>
-
     </div>
   </main>
 
+  <!-- POST REVIEW MODAL (ON-DEMAND) -->
+  <div id="review-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-lg max-w-lg w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div class="flex items-center space-x-2">
+          <div class="h-6 w-6 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center text-xs font-bold font-mono">
+            BD
+          </div>
+          <h3 class="text-sm font-semibold text-slate-900">Post Hardware Experience</h3>
+        </div>
+        <button onclick="closeReviewModal()" class="text-slate-600 hover:text-slate-900 text-xs px-2.5 py-1 rounded-md border border-slate-200 bg-slate-100 min-h-[32px]">Close</button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <!-- Product Picker -->
+        <div class="space-y-1">
+          <label class="text-xs text-slate-700 font-medium">Select Hardware Item:</label>
+          <select id="composer-product-select" class="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-slate-400 truncate min-h-[38px]">
+            <option value="">Select Hardware Item...</option>
+          </select>
+        </div>
+
+        <!-- Phone Number Auth Verification -->
+        <div class="space-y-1">
+          <label class="text-xs text-slate-700 font-medium">Bangladeshi Phone (Verification):</label>
+          <input
+            id="composer-phone"
+            type="text"
+            placeholder="017XXXXXXXX or +8801XXXXXXXX"
+            class="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-400 font-mono min-h-[38px]"
+          />
+        </div>
+
+        <!-- Name & Star Rating -->
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-xs text-slate-700 font-medium block mb-1">Your Name / City:</label>
+            <input
+              id="composer-name"
+              type="text"
+              placeholder="Your Name / Handle"
+              class="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-400 min-h-[38px]"
+            />
+          </div>
+          <div>
+            <label class="text-xs text-slate-700 font-medium block mb-1">Rating Score:</label>
+            <select id="composer-rating" class="w-full bg-slate-50 border border-slate-200 rounded-md px-2 py-2 text-xs text-slate-800 focus:bg-white focus:outline-none focus:border-slate-400 min-h-[38px]">
+              <option value="5">Score: 5 / 5 (Excellent)</option>
+              <option value="4">Score: 4 / 5 (Good)</option>
+              <option value="3">Score: 3 / 5 (Average)</option>
+              <option value="2">Score: 2 / 5 (Fair)</option>
+              <option value="1">Score: 1 / 5 (Poor)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Review Body -->
+        <div class="space-y-1">
+          <label class="text-xs text-slate-700 font-medium">Your Build Impressions & Store Feedback:</label>
+          <textarea
+            id="composer-text"
+            rows="3"
+            placeholder="Share real build impressions: panel backlight bleed, warranty swap speed, thermals..."
+            class="w-full bg-slate-50 border border-slate-200 rounded-md p-2.5 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-400 font-sans"
+          ></textarea>
+        </div>
+
+        <button
+          onclick="submitComposerReview()"
+          class="w-full py-2.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition flex items-center justify-center space-x-1.5 shadow min-h-[38px]"
+        >
+          <i data-lucide="send" class="w-3.5 h-3.5 text-slate-300"></i>
+          <span>Publish Community Review</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- FLOATING SIDE-BY-SIDE HARDWARE COMPARISON BAR -->
-  <div id="comparison-sticky-bar" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40 bg-dark-900/95 border border-dark-600 rounded-xl px-4 py-2.5 shadow-2xl backdrop-blur hidden flex items-center space-x-4">
-    <div class="flex items-center space-x-2 text-xs font-mono">
-      <span class="h-2 w-2 rounded-full bg-cyan-400 animate-pulse"></span>
-      <span class="text-white font-bold">Compare Tray:</span>
-      <span id="compare-tray-count" class="text-cyan-400 font-mono">0 / 3 items</span>
+  <div id="comparison-sticky-bar" class="fixed bottom-5 left-1/2 transform -translate-x-1/2 z-40 bg-white/95 border border-slate-300 rounded-lg px-4 py-2.5 shadow-xl backdrop-blur hidden flex items-center space-x-4">
+    <div class="flex items-center space-x-2 text-xs">
+      <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+      <span class="text-slate-900 font-semibold">Compare:</span>
+      <span id="compare-tray-count" class="text-slate-700 font-mono">0 / 3 items</span>
     </div>
     <div class="flex items-center space-x-2">
-      <button onclick="openComparisonModal()" class="px-3 py-1 rounded bg-cyan-500 hover:bg-cyan-400 text-black font-mono font-bold text-xs transition">
-        View Comparison Matrix →
+      <button onclick="openComparisonModal()" class="px-3 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs transition min-h-[34px]">
+        Compare Selected →
       </button>
-      <button onclick="clearComparisonTray()" class="text-slate-400 hover:text-white text-xs font-mono p-1">
+      <button onclick="clearComparisonTray()" class="text-slate-500 hover:text-slate-800 text-xs p-1">
         Clear
       </button>
     </div>
   </div>
 
   <!-- HARDWARE COMPARISON MATRIX MODAL -->
-  <div id="comparison-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-dark-900 border border-dark-600 rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar p-6 space-y-4 shadow-2xl">
-      <div class="flex items-center justify-between border-b border-dark-700 pb-3">
+  <div id="comparison-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
         <div class="flex items-center space-x-2">
-          <i data-lucide="split" class="w-5 h-5 text-cyan-400"></i>
-          <h3 class="text-base font-bold text-white font-mono">Side-by-Side Hardware Comparison Matrix</h3>
+          <i data-lucide="split" class="w-4 h-4 text-slate-700"></i>
+          <h3 class="text-sm font-semibold text-slate-900">Side-by-Side Comparison Matrix</h3>
         </div>
-        <button onclick="closeComparisonModal()" class="text-slate-400 hover:text-white font-mono text-xs px-2 py-0.5 rounded border border-dark-700 bg-dark-800">[Close]</button>
+        <button onclick="closeComparisonModal()" class="text-slate-600 hover:text-slate-900 text-xs px-2.5 py-1 rounded-md border border-slate-200 bg-slate-100 min-h-[32px]">Close</button>
       </div>
 
-      <div id="comparison-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+      <div id="comparison-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
         <!-- Rendered dynamically -->
       </div>
     </div>
   </div>
 
   <!-- USER PROFILE MODAL (SOCIAL MEDIA) -->
-  <div id="profile-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-dark-900 border border-dark-700 rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-      <div class="flex items-center justify-between border-b border-dark-700 pb-3">
+  <div id="profile-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-lg max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
         <div class="flex items-center space-x-3">
-          <div id="modal-profile-avatar" class="h-11 w-11 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-lg font-mono border-2 border-dark-700">
+          <div id="modal-profile-avatar" class="h-10 w-10 rounded-full bg-slate-900 text-white font-semibold flex items-center justify-center text-sm font-mono border border-slate-200 shadow-sm">
             U
           </div>
           <div>
-            <div id="modal-profile-username" class="text-sm font-bold text-white font-mono">@Username</div>
-            <div id="modal-profile-badge" class="text-[10px] font-mono text-emerald-400">Verified Hardware Member</div>
+            <div id="modal-profile-username" class="text-sm font-semibold text-slate-900">@Username</div>
+            <div id="modal-profile-badge" class="text-[11px] text-emerald-700 font-medium">Verified Member</div>
           </div>
         </div>
-        <button onclick="closeUserProfileModal()" class="text-slate-400 hover:text-white font-mono text-xs px-2 py-0.5 rounded border border-dark-700 bg-dark-800">[Close]</button>
+        <button onclick="closeUserProfileModal()" class="text-slate-600 hover:text-slate-900 text-xs px-2.5 py-1 rounded-md border border-slate-200 bg-slate-100 min-h-[32px]">Close</button>
       </div>
 
-      <div class="space-y-3 text-xs font-mono">
+      <div class="space-y-3 text-xs">
         <div>
-          <label class="text-slate-500 block text-[10px] uppercase">Bio / Rig Specs</label>
-          <p id="modal-profile-bio" class="text-slate-200 mt-0.5 italic">"PC Builder & Hardware Enthusiast"</p>
+          <label class="text-slate-500 block text-[10px] uppercase tracking-wider font-semibold">Bio / Rig Specs</label>
+          <p id="modal-profile-bio" class="text-slate-800 mt-1 italic">"PC Builder & Hardware Enthusiast"</p>
         </div>
         <div class="grid grid-cols-2 gap-3 pt-2">
-          <div class="p-2.5 bg-dark-950 rounded-lg border border-dark-700">
-            <span class="text-slate-500 text-[10px] block">Reputation Score</span>
-            <span id="modal-profile-rep" class="text-base font-bold text-emerald-400">25 PTS</span>
+          <div class="p-3 bg-slate-50 rounded-md border border-slate-200">
+            <span class="text-slate-500 text-[10px] block uppercase tracking-wider font-semibold">Reputation</span>
+            <span id="modal-profile-rep" class="text-sm font-bold text-emerald-700 font-mono">25 PTS</span>
           </div>
-          <div class="p-2.5 bg-dark-950 rounded-lg border border-dark-700">
-            <span class="text-slate-500 text-[10px] block">Verified Mobile</span>
-            <span id="modal-profile-phone" class="text-xs font-bold text-slate-300">017••••5678</span>
+          <div class="p-3 bg-slate-50 rounded-md border border-slate-200">
+            <span class="text-slate-500 text-[10px] block uppercase tracking-wider font-semibold">Verified Phone</span>
+            <span id="modal-profile-phone" class="text-xs font-semibold text-slate-800 font-mono">017••••5678</span>
           </div>
         </div>
       </div>
 
-      <div class="border-t border-dark-700 pt-3">
-        <div class="text-xs font-bold text-white font-mono mb-2">Recent Community Reviews by this User:</div>
-        <div id="modal-profile-reviews" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1 text-xs font-mono">
+      <div class="border-t border-slate-200 pt-3">
+        <div class="text-xs font-semibold text-slate-800 mb-2">Recent Community Reviews:</div>
+        <div id="modal-profile-reviews" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1 text-xs">
           <div class="text-slate-500 py-1">Loading activity history...</div>
         </div>
       </div>
@@ -699,44 +670,44 @@
   </div>
 
   <!-- AUTH / JOIN COMMUNITY MODAL -->
-  <div id="auth-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-dark-900 border border-dark-700 rounded-xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
-      <div class="flex items-center justify-between border-b border-dark-700 pb-3">
+  <div id="auth-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-lg max-w-sm w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-200 pb-3">
         <div class="flex items-center space-x-2">
-          <div class="h-7 w-7 rounded bg-dark-800 border border-dark-700 flex items-center justify-center text-cyan-400">
+          <div class="h-7 w-7 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700">
             <i data-lucide="shield-check" class="w-4 h-4"></i>
           </div>
-          <span class="font-bold text-white text-sm">Join TechPulse Community</span>
+          <span class="font-bold text-slate-900 text-sm">Join TechPulse BD</span>
         </div>
-        <button onclick="closeAuthModal()" class="text-slate-400 hover:text-white font-mono text-xs px-2 py-0.5 rounded border border-dark-700 bg-dark-800">[Close]</button>
+        <button onclick="closeAuthModal()" class="text-slate-600 hover:text-slate-900 text-xs px-2.5 py-1 rounded-md border border-slate-200 bg-slate-100 min-h-[32px]">Close</button>
       </div>
 
-      <div class="space-y-3 text-xs font-mono">
+      <div class="space-y-3 text-xs">
         <div>
-          <label class="text-slate-400 block mb-1">Bangladeshi Phone (Anti-Spam Identity):</label>
+          <label class="text-slate-600 font-medium block mb-1">Bangladeshi Phone (Verification):</label>
           <input
             id="auth-phone-input"
             type="text"
             placeholder="017XXXXXXXX"
-            class="w-full bg-dark-950 border border-dark-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+            class="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-slate-900 font-mono focus:bg-white focus:outline-none focus:border-slate-400 min-h-[38px]"
           />
         </div>
         <div>
-          <label class="text-slate-400 block mb-1">Choose Username / Handle:</label>
+          <label class="text-slate-600 font-medium block mb-1">Choose Username / Handle:</label>
           <input
             id="auth-username-input"
             type="text"
             placeholder="e.g. Tanvir_PC"
-            class="w-full bg-dark-950 border border-dark-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+            class="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-slate-400 min-h-[38px]"
           />
         </div>
         <div>
-          <label class="text-slate-400 block mb-1">Short Bio / Rig Specs:</label>
+          <label class="text-slate-600 font-medium block mb-1">Short Bio / Rig Specs:</label>
           <input
             id="auth-bio-input"
             type="text"
-            placeholder="e.g. Budget PC Gamer • RTX 4060 build"
-            class="w-full bg-dark-950 border border-dark-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
+            placeholder="e.g. Budget PC Gamer • Ryzen 7600"
+            class="w-full bg-slate-50 border border-slate-200 rounded-md px-3 py-2 text-slate-900 focus:bg-white focus:outline-none focus:border-slate-400 min-h-[38px]"
           />
         </div>
       </div>
@@ -744,19 +715,19 @@
       <div class="pt-2">
         <button
           onclick="handleAuthSubmit()"
-          class="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold transition shadow"
+          class="w-full py-2.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition shadow min-h-[40px]"
         >
           Save & Enter Community
         </button>
-        <p class="text-[10px] font-mono text-slate-500 text-center mt-2">
-          Your phone number is hashed/masked to preserve privacy while blocking seller review bots.
+        <p class="text-[11px] text-slate-500 text-center mt-2.5">
+          Phone numbers are masked to protect privacy while preventing retailer spam bots.
         </p>
       </div>
     </div>
   </div>
 
   <!-- TOAST NOTIFICATION -->
-  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-16 opacity-0 transition duration-300 bg-dark-850 border border-dark-700 text-white text-xs font-mono px-4 py-2.5 rounded-lg shadow-2xl flex items-center space-x-2">
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-16 opacity-0 transition duration-200 bg-slate-900 border border-slate-800 text-white text-xs px-4 py-3 rounded-lg shadow-2xl flex items-center space-x-2.5">
     <i data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
     <span id="toast-message">Notification</span>
   </div>
