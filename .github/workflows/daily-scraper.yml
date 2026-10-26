@@ -22,7 +22,7 @@ concurrency:
 jobs:
   scrape-and-sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 60
 
     steps:
       - name: Check out repository
