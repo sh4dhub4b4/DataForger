@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       category:
-        description: 'Component Category to scrape (e.g., SSD, Processor, Keyboard, or all)'
+        description: 'Component Category to scrape (e.g., all, SSD, Processor, Monitor, Laptop, Keyboard, Mouse)'
         required: true
-        default: 'SSD'
+        default: 'all'
       max_pages:
         description: 'Maximum pages per store'
         required: false
