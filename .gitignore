@@ -1,5 +1,7 @@
 # Go Binaries
 scraper/*.exe
+scraper/scraper-runner
+scraper-runner
 *.exe
 *.dll
 *.so

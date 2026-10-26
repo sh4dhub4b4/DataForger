@@ -1,0 +1,13 @@
+{
+  "name": "techpulse-bd",
+  "version": "2.5.0",
+  "description": "Centralized Bangladesh PC Hardware Price Aggregator and Intelligence Engine",
+  "scripts": {
+    "build:css": "tailwindcss@3 -c tailwind.config.js -i web/input.css -o web/style.min.css --minify",
+    "test:security": "node tests/e2e_break_test.js",
+    "test:e2e": "node tests/user_perspective_walkthrough.js"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

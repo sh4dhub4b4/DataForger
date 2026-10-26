@@ -1,6 +1,8 @@
 module goscraper
 
-go 1.25.4
+go 1.24.0
+
+toolchain go1.24.4
 
 require github.com/gocolly/colly/v2 v2.3.0
 

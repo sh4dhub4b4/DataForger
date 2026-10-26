@@ -213,7 +213,7 @@ async function fetchInitialData() {
   } catch (err) {
     console.error("Failed to load initial data:", err);
     document.getElementById("hardware-feed").innerHTML = `
-      <div class="p-4 bg-dark-900 border border-red-900/50 rounded text-red-400 font-mono text-xs text-center">
+      <div class="p-4 bg-red-50 border border-red-200 rounded-md text-red-700 text-xs text-center">
         Error loading feed from Supabase: ${escapeHtml(err.message)}
       </div>
     `;
@@ -245,6 +245,75 @@ function populateProductPicker() {
     allProducts.map((p) => `<option value="${p.id}">[${p.vendor_name}] ${escapeHtml(p.title)}</option>`).join("");
 }
 
+// Mobile Filter Drawer Toggle
+function toggleMobileFilters() {
+  const sidebar = document.getElementById("filter-sidebar");
+  if (sidebar) {
+    sidebar.classList.toggle("hidden");
+    if (!sidebar.classList.contains("hidden")) {
+      sidebar.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+}
+
+// On-demand Review Modal Triggers
+function openReviewModal(productId = "") {
+  const modal = document.getElementById("review-modal");
+  if (modal) {
+    modal.classList.remove("hidden");
+    if (productId) {
+      const select = document.getElementById("composer-product-select");
+      if (select) select.value = productId;
+    }
+    const phoneInput = document.getElementById("composer-phone");
+    if (phoneInput && currentUser) phoneInput.value = currentUser.user_phone;
+    const nameInput = document.getElementById("composer-name");
+    if (nameInput && currentUser) nameInput.value = currentUser.username;
+  }
+}
+
+function closeReviewModal() {
+  const modal = document.getElementById("review-modal");
+  if (modal) modal.classList.add("hidden");
+}
+
+// Reset All Filters
+function resetAllFilters() {
+  activeCategory = "ALL";
+  activeQuickSpec = null;
+  const searchInput = document.getElementById("global-search");
+  if (searchInput) searchInput.value = "";
+  const vendorFilter = document.getElementById("feed-vendor-filter");
+  if (vendorFilter) vendorFilter.value = "ALL";
+  const stockFilter = document.getElementById("feed-in-stock-only");
+  if (stockFilter) stockFilter.checked = false;
+  const sortFilter = document.getElementById("feed-sort-filter");
+  if (sortFilter) sortFilter.value = "NEWEST";
+
+  document.querySelectorAll(".category-tab").forEach((btn) => {
+    const isAll = btn.getAttribute("data-cat") === "ALL";
+    if (isAll) {
+      btn.className = "category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-white bg-slate-900 border border-slate-900 font-medium cursor-pointer transition min-h-[32px]";
+      const countSpan = btn.querySelector("span[id^='count-'], span#header-product-count");
+      if (countSpan) countSpan.className = "px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 text-[11px] font-mono";
+    } else {
+      btn.className = "category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]";
+      const countSpan = btn.querySelector("span[id^='count-'], span#header-product-count");
+      if (countSpan) countSpan.className = "px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono";
+    }
+  });
+
+  document.querySelectorAll(".spec-tag").forEach((btn) => {
+    btn.className = "spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition";
+  });
+
+  const mobileStatus = document.getElementById("mobile-filter-status");
+  if (mobileStatus) mobileStatus.innerText = "All Components";
+
+  showToast("All filters reset to default.");
+  applyFilters();
+}
+
 // Switch Pricing Mode: Cash Special vs Regular Card/EMI
 function setPriceComparisonMode(mode) {
   activePriceMode = mode;
@@ -253,19 +322,19 @@ function setPriceComparisonMode(mode) {
 
   if (btnCash && btnCard) {
     if (mode === "CASH") {
-      btnCash.className = "px-2.5 py-1 rounded text-[11px] font-bold text-white bg-dark-800 border border-emerald-500/50 flex items-center space-x-1.5 shadow-sm transition";
-      btnCard.className = "px-2.5 py-1 rounded text-[11px] font-medium text-slate-400 hover:text-white transition flex items-center space-x-1.5";
-      btnCash.querySelector("span").className = "h-2 w-2 rounded-full bg-emerald-400";
-      btnCard.querySelector("span").className = "h-2 w-2 rounded-full bg-slate-600";
+      btnCash.className = "py-1.5 px-2 rounded-md text-xs font-semibold text-slate-900 bg-white border border-slate-200 shadow-2xs flex items-center justify-center space-x-1.5 transition min-h-[30px]";
+      btnCard.className = "py-1.5 px-2 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition flex items-center justify-center space-x-1.5 min-h-[30px]";
+      btnCash.querySelector("span").className = "h-2 w-2 rounded-full bg-emerald-500 flex-shrink-0";
+      btnCard.querySelector("span").className = "h-2 w-2 rounded-full bg-slate-400 flex-shrink-0";
     } else {
-      btnCard.className = "px-2.5 py-1 rounded text-[11px] font-bold text-white bg-dark-800 border border-cyan-500/50 flex items-center space-x-1.5 shadow-sm transition";
-      btnCash.className = "px-2.5 py-1 rounded text-[11px] font-medium text-slate-400 hover:text-white transition flex items-center space-x-1.5";
-      btnCard.querySelector("span").className = "h-2 w-2 rounded-full bg-cyan-400";
-      btnCash.querySelector("span").className = "h-2 w-2 rounded-full bg-slate-600";
+      btnCard.className = "py-1.5 px-2 rounded-md text-xs font-semibold text-slate-900 bg-white border border-slate-200 shadow-2xs flex items-center justify-center space-x-1.5 transition min-h-[30px]";
+      btnCash.className = "py-1.5 px-2 rounded-md text-xs font-medium text-slate-600 hover:text-slate-900 transition flex items-center justify-center space-x-1.5 min-h-[30px]";
+      btnCard.querySelector("span").className = "h-2 w-2 rounded-full bg-slate-800 flex-shrink-0";
+      btnCash.querySelector("span").className = "h-2 w-2 rounded-full bg-slate-400 flex-shrink-0";
     }
   }
 
-  showToast(`Pricing View: ${mode === "CASH" ? "Cash Special Discount" : "Card POS & 12-Month EMI"}`);
+  showToast(`Pricing View: ${mode === "CASH" ? "Cash Special Discount" : "Card POS & EMI"}`);
   applyFilters();
 }
 
@@ -287,7 +356,7 @@ function switchMainFeedMode(mode) {
   const lazySentinel = document.getElementById("lazy-sentinel");
   const pillsRow = document.getElementById("category-pills-row");
   const specFiltersPill = document.getElementById("spec-filter-pills");
-  const specFilters = specFiltersPill ? specFiltersPill.closest("section") : null;
+  const specFilters = specFiltersPill ? specFiltersPill.closest(".spec-filter-section") : null;
 
   // Reset nav button styles
   const allNavs = [
@@ -300,9 +369,9 @@ function switchMainFeedMode(mode) {
   allNavs.forEach(({ el, m }) => {
     if (!el) return;
     if (m === mode) {
-      el.className = "px-2.5 py-1 rounded-md font-bold flex items-center space-x-1.5 transition text-white bg-dark-800 shadow-sm border border-cyan-500/50 cursor-pointer";
+      el.className = "px-2.5 py-1 rounded-md font-medium flex items-center space-x-1.5 transition text-white bg-slate-900 shadow-xs border border-slate-900 cursor-pointer min-h-[30px]";
     } else {
-      el.className = "px-2.5 py-1 rounded-md font-semibold flex items-center space-x-1.5 transition text-slate-400 hover:text-white hover:bg-dark-850 cursor-pointer";
+      el.className = "px-2.5 py-1 rounded-md font-medium flex items-center space-x-1.5 transition text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 cursor-pointer min-h-[30px]";
     }
   });
 
@@ -353,12 +422,23 @@ function setCategoryFilter(category) {
   activeCategory = category;
   activeQuickSpec = null;
   document.querySelectorAll(".category-tab").forEach((btn) => {
-    if (btn.getAttribute("data-cat") === category) {
-      btn.className = "category-tab px-2.5 py-0.5 rounded text-white bg-dark-800 font-semibold";
+    const isTarget = btn.getAttribute("data-cat") === category;
+    if (isTarget) {
+      btn.className = "category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-white bg-slate-900 border border-slate-900 font-medium cursor-pointer transition min-h-[32px]";
+      const countSpan = btn.querySelector("span[id^='count-'], span#header-product-count");
+      if (countSpan) countSpan.className = "px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 text-[11px] font-mono";
     } else {
-      btn.className = "category-tab px-2.5 py-0.5 rounded hover:text-white hover:bg-dark-800/60 transition text-slate-400";
+      btn.className = "category-tab w-full flex items-center justify-between px-3 py-1.5 rounded-md text-slate-700 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition cursor-pointer min-h-[32px]";
+      const countSpan = btn.querySelector("span[id^='count-'], span#header-product-count");
+      if (countSpan) countSpan.className = "px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[11px] font-mono";
     }
   });
+
+  const mobileStatus = document.getElementById("mobile-filter-status");
+  if (mobileStatus) {
+    mobileStatus.innerText = category === "ALL" ? "All Components" : `${category}s`;
+  }
+
   applyFilters();
 }
 
@@ -372,9 +452,9 @@ function applyQuickSpec(spec) {
 
   document.querySelectorAll(".spec-tag").forEach((btn) => {
     if (btn.innerText.includes(activeQuickSpec)) {
-      btn.className = "spec-tag px-2 py-0.5 rounded bg-cyan-950 border border-cyan-700 text-cyan-300 font-bold text-[11px]";
+      btn.className = "spec-tag px-2 py-0.5 rounded-md bg-slate-900 border border-slate-900 text-white font-medium text-xs shadow-2xs";
     } else {
-      btn.className = "spec-tag px-2 py-0.5 rounded bg-dark-900 hover:bg-dark-800 border border-dark-700 text-slate-300 text-[11px]";
+      btn.className = "spec-tag px-2 py-0.5 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-medium transition";
     }
   });
 
@@ -472,6 +552,66 @@ function extractHardwareSpecs(title, category) {
   return specs;
 }
 
+// Canonical Model Normalizer for Multi-Store Grouping
+function getCanonicalProductKey(title, category) {
+  if (!title) return "";
+  const clean = title.toLowerCase()
+    .replace(/\b(desktop|gaming|series|edition|brand|official|processor|monitor|display|laptop|keyboard|mouse|ssd|nvme|m\.2|inch|fhd|qhd|uhd)\b/gi, "")
+    .replace(/[^a-z0-9]/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter((w) => w.length > 1)
+    .slice(0, 6)
+    .sort()
+    .join(" ");
+  return `${(category || "").toLowerCase()}__${clean}`;
+}
+
+function groupProductsByModel(products) {
+  const groups = new Map();
+
+  products.forEach((p) => {
+    const key = getCanonicalProductKey(p.title, p.category);
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key).push(p);
+  });
+
+  const clustered = [];
+  groups.forEach((items) => {
+    // Sort items by active effective price ascending
+    items.sort((a, b) => {
+      const priceA = activePriceMode === "CARD" ? Math.round(Number(a.current_price) * 1.07) : Number(a.current_price);
+      const priceB = activePriceMode === "CARD" ? Math.round(Number(b.current_price) * 1.07) : Number(b.current_price);
+      return priceA - priceB;
+    });
+
+    const primary = items[0];
+
+    // De-duplicate stores in the comparison list: keep lowest price per vendor
+    const vendorMap = new Map();
+    items.forEach((item) => {
+      if (!vendorMap.has(item.vendor_name)) {
+        vendorMap.set(item.vendor_name, item);
+      }
+    });
+
+    const storeVariants = Array.from(vendorMap.values());
+    const isMulti = storeVariants.length > 1;
+
+    clustered.push({
+      ...primary,
+      storeVariants: storeVariants,
+      isMultiStore: isMulti,
+      minPrice: Number(items[0].current_price),
+      maxPrice: Number(items[items.length - 1].current_price),
+    });
+  });
+
+  return clustered;
+}
+
 // Apply Filters
 function applyFilters() {
   const query = document.getElementById("global-search").value.toLowerCase().trim();
@@ -529,6 +669,17 @@ function applyFilters() {
     filteredProducts.sort((a, b) => new Date(b.last_scraped_at) - new Date(a.last_scraped_at));
   }
 
+  // Multi-Store Grouping Option
+  const shouldGroup = document.getElementById("feed-group-multistore")?.checked ?? true;
+  if (shouldGroup) {
+    filteredProducts = groupProductsByModel(filteredProducts);
+  }
+
+  const mobileCount = document.getElementById("mobile-product-count");
+  if (mobileCount) {
+    mobileCount.innerText = `${filteredProducts.length.toLocaleString()} items`;
+  }
+
   currentRenderCount = BATCH_SIZE;
   renderHardwareFeed(true);
 }
@@ -562,8 +713,8 @@ function renderHardwareFeed(reset = false) {
 
   if (filteredProducts.length === 0) {
     container.innerHTML = `
-      <div class="p-12 text-center text-slate-500 font-mono text-xs border border-dashed border-dark-700 rounded-xl">
-        No components found matching your criteria. Try loosening the store or spec tags.
+      <div class="p-12 text-center text-slate-500 text-xs border border-dashed border-slate-200 rounded-lg bg-white">
+        No components found matching your criteria. Try loosening the retailer filter or spec tags.
       </div>
     `;
     loadMoreBtn.classList.add("hidden");
@@ -679,8 +830,8 @@ function renderSingleCard(p) {
 
   const isInStock = p.stock_status.toLowerCase().includes("in stock");
   const stockBadge = isInStock
-    ? `<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/80">In Stock</span>`
-    : `<span class="text-[10px] font-mono px-2 py-0.5 rounded bg-dark-800 text-slate-400 border border-dark-700">Out of Stock</span>`;
+    ? `<span class="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">In Stock</span>`
+    : `<span class="text-[11px] font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">Out of Stock</span>`;
 
   const safeImageUrl = sanitizeUrl(p.image_url);
   const safeAffiliateUrl = buildAffiliateUrl(p.product_url, p.vendor_name);
@@ -691,7 +842,7 @@ function renderSingleCard(p) {
   // Extracted specs pills
   const specs = extractHardwareSpecs(p.title, p.category);
   const specsHtml = specs.map((s) => `
-    <span class="px-1.5 py-0.5 rounded bg-dark-850 text-slate-300 border border-dark-700 text-[10px] font-mono">
+    <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 text-xs font-medium">
       ${escapeHtml(s.label)}
     </span>
   `).join("");
@@ -700,26 +851,30 @@ function renderSingleCard(p) {
   const initialImg = safeImageUrl || placeholderSvg;
 
   return `
-    <article class="cyber-card ${vendorTheme.borderAccent} rounded-xl overflow-hidden transition" id="card-${escapeHtml(p.id)}">
+    <article class="shadcn-card rounded-lg overflow-hidden transition duration-150 bg-white border border-slate-200 shadow-xs" id="card-${escapeHtml(p.id)}">
       
-      <!-- Card Top: Retailer Header, Stock, and Comparison Check -->
-      <div class="px-4 py-2.5 bg-dark-950/70 border-b border-dark-800 flex items-center justify-between text-xs font-mono">
+      <!-- Card Header: Vendor, Category, Stock & Compare -->
+      <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs">
         <div class="flex items-center space-x-2">
-          <span class="px-2 py-0.5 rounded font-bold text-[11px] ${vendorTheme.badge}">${escapeHtml(p.vendor_name)}</span>
-          <span class="text-slate-600">•</span>
-          <span class="text-slate-400 text-[11px]">${escapeHtml(p.category || 'Component')}</span>
-          <span class="text-slate-600">•</span>
-          <span class="text-slate-500 text-[11px]">Synced ${formatTimeAgo(p.last_scraped_at)}</span>
+          ${p.isMultiStore && p.storeVariants && p.storeVariants.length > 1
+            ? `<span class="px-2 py-0.5 rounded font-medium text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200">Best: ${escapeHtml(p.vendor_name)}</span>
+               <span class="px-2 py-0.5 rounded font-medium text-[11px] bg-sky-50 text-sky-700 border border-sky-200">${p.storeVariants.length} Stores Matched</span>`
+            : `<span class="px-2 py-0.5 rounded font-medium text-[11px] ${vendorTheme.badge}">${escapeHtml(p.vendor_name)}</span>`
+          }
+          <span class="text-slate-300">•</span>
+          <span class="text-slate-600">${escapeHtml(p.category || 'Component')}</span>
+          <span class="text-slate-300 hidden sm:inline">•</span>
+          <span class="text-slate-400 hidden sm:inline">Synced ${formatTimeAgo(p.last_scraped_at)}</span>
         </div>
-        <div class="flex items-center space-x-2.5">
+        <div class="flex items-center space-x-3">
           ${stockBadge}
-          <label class="flex items-center space-x-1 cursor-pointer text-[11px] text-slate-400 hover:text-white select-none">
+          <label class="flex items-center space-x-1.5 cursor-pointer text-xs text-slate-500 hover:text-slate-900 select-none py-1">
             <input
               type="checkbox"
               ${isCompared ? 'checked' : ''}
               data-action="toggle-compare"
               data-id="${escapeHtml(p.id)}"
-              class="rounded bg-dark-800 border-dark-600 text-cyan-500 focus:ring-0 cursor-pointer"
+              class="rounded bg-white border-slate-300 text-slate-900 focus:ring-0 cursor-pointer w-3.5 h-3.5"
             />
             <span>Compare</span>
           </label>
@@ -727,84 +882,128 @@ function renderSingleCard(p) {
       </div>
 
       <!-- Card Main Body -->
-      <div class="p-4 flex flex-col sm:flex-row gap-4 items-start">
+      <div class="p-4 sm:p-5 flex flex-col sm:flex-row gap-4 items-start">
         
-        <!-- Lazy Loaded Image Thumbnail with Direct Fallback & Cross-Origin Support -->
-        <div class="h-24 w-24 sm:h-28 sm:w-28 bg-dark-950 rounded-lg border border-dark-700 flex-shrink-0 flex items-center justify-center p-2 overflow-hidden group relative">
+        <!-- Product Thumbnail -->
+        <div class="h-24 w-24 sm:h-28 sm:w-28 bg-white rounded-md border border-slate-200 flex-shrink-0 flex items-center justify-center p-2 overflow-hidden group relative">
           <img
             src="${initialImg}"
             alt="${escapeHtml(p.title)}"
             loading="lazy"
             decoding="async"
             referrerpolicy="no-referrer"
-            class="max-h-full max-w-full object-contain group-hover:scale-105 transition duration-200"
+            class="max-h-full max-w-full object-contain group-hover:scale-105 transition duration-150"
             onerror="handleImageError(this, '${escapeHtml(p.category || '')}')"
           />
         </div>
 
         <!-- Product Specs & Authentic Pricing Breakdown -->
-        <div class="flex-1 min-w-0 flex flex-col justify-between space-y-2">
+        <div class="flex-1 min-w-0 flex flex-col justify-between space-y-2.5">
           <div>
-            <h3 class="text-sm sm:text-base font-bold text-white tracking-tight leading-snug line-clamp-2 hover:text-cyan-400 transition cursor-pointer" data-action="toggle-comments" data-id="${escapeHtml(p.id)}">
+            <h3 class="text-sm sm:text-base font-semibold text-slate-900 hover:text-blue-600 tracking-tight leading-snug line-clamp-2 transition cursor-pointer" data-action="toggle-comments" data-id="${escapeHtml(p.id)}">
               ${escapeHtml(p.title)}
             </h3>
             
             <!-- Real Hardware Spec Badges -->
             <div class="mt-2 flex flex-wrap items-center gap-1.5">
               ${specsHtml}
-              <span class="px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/80 text-[10px] font-mono">
+              <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-medium">
                 Official BD Warranty
               </span>
             </div>
           </div>
 
           <!-- Dual Price Block (Cash Discount vs Regular/EMI) with Active Pricing Mode Highlighting -->
-          <div class="pt-2 flex flex-wrap items-baseline justify-between gap-2 border-t border-dark-800/80">
+          <div class="pt-2 flex flex-wrap items-baseline justify-between gap-2 border-t border-slate-100">
             <div>
-              <div class="flex items-baseline space-x-1.5">
-                <span class="text-xs font-mono font-bold uppercase ${activePriceMode === 'CASH' ? 'text-emerald-400' : 'text-slate-400'}">
-                  ${activePriceMode === 'CASH' ? 'Cash Special:' : 'Card / POS:'}
+              <div class="flex items-baseline space-x-2">
+                <span class="text-xs font-medium uppercase tracking-wider ${activePriceMode === 'CASH' ? 'text-emerald-700 font-semibold' : 'text-slate-500'}">
+                  ${p.isMultiStore ? 'Best Cash Special:' : (activePriceMode === 'CASH' ? 'Cash Special:' : 'Card / POS:')}
                 </span>
-                <span class="text-xl sm:text-2xl font-mono font-black tracking-tight ${activePriceMode === 'CASH' ? 'text-white' : 'text-cyan-300'}">
+                <span class="text-xl sm:text-2xl font-bold font-mono tracking-tight text-slate-900">
                   ৳ ${activePriceMode === 'CASH' ? formattedCashPrice : formattedRegularPrice}
                 </span>
               </div>
-              <div class="text-[11px] font-mono text-slate-500 flex items-center space-x-2">
+              <div class="text-xs text-slate-500 flex items-center space-x-2 mt-0.5">
                 ${activePriceMode === 'CASH'
-                  ? `<span>Regular / POS: <del>৳ ${formattedRegularPrice}</del></span><span>•</span><span class="text-slate-400">EMI: ৳ ${emiPerMonth}/mo</span>`
-                  : `<span>Cash Discount: <span class="text-emerald-400 font-bold">৳ ${formattedCashPrice}</span></span><span>•</span><span class="text-slate-400">12M EMI: ৳ ${emiPerMonth}/mo</span>`
+                  ? `<span>Regular POS: <del class="text-slate-400">৳ ${formattedRegularPrice}</del></span><span>•</span><span class="text-slate-500">EMI: ৳ ${emiPerMonth}/mo</span>`
+                  : `<span>Cash Discount: <span class="text-emerald-700 font-semibold font-mono">৳ ${formattedCashPrice}</span></span><span>•</span><span class="text-slate-500">12M EMI: ৳ ${emiPerMonth}/mo</span>`
                 }
               </div>
             </div>
 
-            <div class="text-right text-[11px] font-mono text-slate-400 hidden sm:block">
-              <span class="block">Branch: ${escapeHtml(vendorTheme.hub)}</span>
-              <span class="text-[10px] text-slate-500">Verified ${formatTimeAgo(p.last_scraped_at)}</span>
+            <div class="text-right text-xs text-slate-400 hidden sm:block">
+              <span class="block">Hub: <strong class="text-slate-700 font-medium">${escapeHtml(vendorTheme.hub)}</strong></span>
+              <span class="text-[11px] text-slate-400">Checked ${formatTimeAgo(p.last_scraped_at)}</span>
             </div>
           </div>
         </div>
 
       </div>
 
+      <!-- Direct Multi-Store Price Comparison Matrix Table -->
+      ${p.isMultiStore && p.storeVariants && p.storeVariants.length > 1 ? `
+        <div class="px-4 pb-4">
+          <div class="border border-slate-200 rounded-lg overflow-hidden bg-slate-50/70">
+            <div class="px-3.5 py-2 bg-slate-100/90 border-b border-slate-200 text-[11px] font-semibold text-slate-700 flex items-center justify-between">
+              <span class="flex items-center space-x-1.5">
+                <i data-lucide="scale" class="w-3.5 h-3.5 text-slate-500"></i>
+                <span>Direct Store Price Match (${p.storeVariants.length} Bangladesh Stores)</span>
+              </span>
+              ${p.maxPrice > p.minPrice ? `<span class="text-emerald-700 font-semibold text-[11px]">Save up to ৳ ${(p.maxPrice - p.minPrice).toLocaleString()}</span>` : '<span class="text-slate-400 text-[11px]">Matching Price</span>'}
+            </div>
+            <div class="divide-y divide-slate-200/60 text-xs">
+              ${p.storeVariants.map((v, idx) => {
+                const vTheme = getVendorTheme(v.vendor_name);
+                const vPrice = Number(v.current_price);
+                const isLowest = idx === 0;
+                const vUrl = buildAffiliateUrl(v.product_url, v.vendor_name);
+                return `
+                  <div class="px-3.5 py-2.5 flex items-center justify-between hover:bg-white transition bg-white/50">
+                    <div class="flex items-center space-x-2.5">
+                      <span class="px-2 py-0.5 rounded text-[11px] font-medium ${vTheme.badge}">${escapeHtml(v.vendor_name)}</span>
+                      ${isLowest ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">Lowest</span>' : ''}
+                      <span class="text-[11px] text-slate-500 hidden sm:inline">• ${escapeHtml(v.stock_status)}</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                      <span class="font-mono font-bold ${isLowest ? 'text-emerald-700' : 'text-slate-800'}">৳ ${vPrice.toLocaleString('en-US')}</span>
+                      <a
+                        href="${vUrl}"
+                        target="_blank"
+                        rel="noopener noreferrer nofollow sponsored"
+                        onclick="trackAffiliateClick('${escapeHtml(v.id)}', '${escapeHtml(v.vendor_name)}', '${vUrl}', ${v.current_price})"
+                        class="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-medium transition shadow-2xs"
+                      >
+                        Buy at ${escapeHtml(v.vendor_name.split(' ')[0])} →
+                      </a>
+                    </div>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          </div>
+        </div>
+      ` : ''}
+
       <!-- Card Social Footer & Action Bar -->
-      <div class="px-4 py-2.5 bg-dark-950/50 border-t border-dark-800 flex items-center justify-between text-xs font-mono text-slate-400 flex-wrap gap-2">
+      <div class="px-4 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 flex-wrap gap-2">
         
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center flex-wrap gap-1.5 sm:gap-2">
           <!-- Deal Upvote Button -->
           <button
             data-action="upvote-deal"
             data-id="${escapeHtml(p.id)}"
-            class="px-2.5 py-1 rounded-md border border-dark-700 hover:border-dark-600 flex items-center space-x-1.5 transition ${isUpvoted ? 'text-emerald-400 bg-emerald-950/40 border-emerald-800' : 'hover:text-white'}"
+            class="px-2.5 py-1.5 rounded-md border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 flex items-center space-x-1.5 transition min-h-[32px] ${isUpvoted ? 'text-emerald-700 bg-emerald-50 border-emerald-300 font-medium' : 'text-slate-700 hover:text-slate-900 shadow-2xs'}"
           >
             <i data-lucide="arrow-big-up" class="w-4 h-4 pointer-events-none"></i>
-            <span class="pointer-events-none">${upvoteCount} Upvotes</span>
+            <span class="pointer-events-none">${upvoteCount}</span>
           </button>
 
-          <!-- Add to Build Lab Button (PCPartPicker Integration) -->
+          <!-- Add to Build Lab Button -->
           <button
             data-action="add-to-build"
             data-id="${escapeHtml(p.id)}"
-            class="px-2 py-1 rounded-md border border-dark-700 hover:border-emerald-600 hover:text-emerald-400 flex items-center space-x-1 transition text-slate-400"
+            class="px-2.5 py-1.5 rounded-md border border-slate-200 hover:border-slate-300 hover:text-slate-900 bg-white hover:bg-slate-50 flex items-center space-x-1.5 transition text-slate-700 min-h-[32px] shadow-2xs"
             title="Slot into PC Builder"
           >
             <i data-lucide="wrench" class="w-3.5 h-3.5 pointer-events-none"></i>
@@ -815,20 +1014,20 @@ function renderSingleCard(p) {
           <button
             data-action="toggle-comments"
             data-id="${escapeHtml(p.id)}"
-            class="px-2.5 py-1 rounded-md border border-dark-700 hover:border-dark-600 hover:text-white flex items-center space-x-1.5 transition"
+            class="px-2.5 py-1.5 rounded-md border border-slate-200 hover:border-slate-300 hover:text-slate-900 bg-white hover:bg-slate-50 flex items-center space-x-1.5 transition text-slate-700 min-h-[32px] shadow-2xs"
           >
-            <i data-lucide="message-square" class="w-3.5 h-3.5 text-cyan-400 pointer-events-none"></i>
-            <span class="pointer-events-none">Reviews & Build Notes</span>
+            <i data-lucide="message-square" class="w-3.5 h-3.5 text-slate-500 pointer-events-none"></i>
+            <span class="pointer-events-none">Reviews</span>
           </button>
 
           <!-- Inline Price Graph Toggle -->
           <button
             data-action="toggle-chart"
             data-id="${escapeHtml(p.id)}"
-            class="px-2.5 py-1 rounded-md border border-dark-700 hover:border-dark-600 hover:text-white flex items-center space-x-1.5 transition"
+            class="px-2.5 py-1.5 rounded-md border border-slate-200 hover:border-slate-300 hover:text-slate-900 bg-white hover:bg-slate-50 flex items-center space-x-1.5 transition text-slate-700 min-h-[32px] shadow-2xs"
           >
-            <i data-lucide="trending-down" class="w-3.5 h-3.5 text-amber-400 pointer-events-none"></i>
-            <span class="pointer-events-none">Price Graph</span>
+            <i data-lucide="trending-down" class="w-3.5 h-3.5 text-slate-500 pointer-events-none"></i>
+            <span class="pointer-events-none">Price Trend</span>
           </button>
         </div>
 
@@ -837,7 +1036,7 @@ function renderSingleCard(p) {
           <button
             data-action="copy-link"
             data-id="${escapeHtml(p.id)}"
-            class="p-1.5 rounded hover:text-white text-slate-500 transition"
+            class="p-2 rounded-md hover:text-slate-900 text-slate-500 hover:bg-slate-200/60 transition min-h-[32px]"
             title="Copy Direct Link"
           >
             <i data-lucide="share-2" class="w-4 h-4 pointer-events-none"></i>
@@ -848,23 +1047,23 @@ function renderSingleCard(p) {
             target="_blank"
             rel="noopener noreferrer nofollow sponsored"
             onclick="trackAffiliateClick('${escapeHtml(p.id)}', '${escapeHtml(p.vendor_name)}', '${safeAffiliateUrl}', ${p.current_price})"
-            class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold border border-emerald-500/80 flex items-center space-x-1.5 transition text-xs shadow-sm"
+            class="px-3.5 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white font-semibold flex items-center space-x-1.5 transition text-xs shadow-xs min-h-[32px]"
           >
-            <span>Buy on ${escapeHtml(p.vendor_name)}</span>
-            <i data-lucide="external-link" class="w-3.5 h-3.5 text-emerald-200"></i>
+            <span>Visit Store</span>
+            <i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-300"></i>
           </a>
         </div>
 
       </div>
 
       <!-- INLINE EXPANDABLE PRICE CHART DRAWER -->
-      <div id="chart-drawer-${escapeHtml(p.id)}" class="hidden border-t border-dark-700 bg-dark-950 p-4">
-        <div class="flex items-center justify-between mb-2 text-xs font-mono">
-          <span class="text-slate-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <i data-lucide="line-chart" class="w-3.5 h-3.5 text-cyan-400"></i>
-            Verified Cash Price Movement in Bangladesh (BDT)
+      <div id="chart-drawer-${escapeHtml(p.id)}" class="hidden border-t border-slate-200 bg-slate-50 p-4">
+        <div class="flex items-center justify-between mb-3 text-xs">
+          <span class="text-slate-800 font-medium flex items-center gap-2">
+            <i data-lucide="line-chart" class="w-4 h-4 text-slate-500"></i>
+            Verified Cash Price History (BDT)
           </span>
-          <button data-action="toggle-chart" data-id="${escapeHtml(p.id)}" class="text-slate-400 hover:text-white font-mono text-[11px]">[Close]</button>
+          <button data-action="toggle-chart" data-id="${escapeHtml(p.id)}" class="text-slate-500 hover:text-slate-800 text-xs px-2 py-0.5 rounded border border-slate-200 bg-white">Close</button>
         </div>
         <div class="h-44 w-full">
           <canvas id="canvas-chart-${escapeHtml(p.id)}"></canvas>
@@ -872,33 +1071,33 @@ function renderSingleCard(p) {
       </div>
 
       <!-- INLINE EXPANDABLE REVIEWS DRAWER -->
-      <div id="comments-drawer-${escapeHtml(p.id)}" class="hidden border-t border-dark-700 bg-dark-950 p-4 space-y-4">
-        <div class="flex items-center justify-between text-xs font-mono">
-          <span class="text-slate-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <i data-lucide="messages-square" class="w-3.5 h-3.5 text-emerald-400"></i>
+      <div id="comments-drawer-${escapeHtml(p.id)}" class="hidden border-t border-slate-200 bg-slate-50 p-4 space-y-3.5">
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-slate-800 font-medium flex items-center gap-2">
+            <i data-lucide="messages-square" class="w-4 h-4 text-slate-500"></i>
             Verified Community Feedback & Store Experience
           </span>
-          <button data-action="toggle-comments" data-id="${escapeHtml(p.id)}" class="text-slate-400 hover:text-white font-mono text-[11px]">[Close]</button>
+          <button data-action="toggle-comments" data-id="${escapeHtml(p.id)}" class="text-slate-500 hover:text-slate-800 text-xs px-2 py-0.5 rounded border border-slate-200 bg-white">Close</button>
         </div>
 
         <!-- Inline Review Quick Submit -->
-        <div class="p-3 bg-dark-900 border border-dark-700 rounded-lg space-y-2">
+        <div class="p-3 bg-white border border-slate-200 rounded-md space-y-2 shadow-2xs">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <input
               id="inline-phone-${escapeHtml(p.id)}"
               type="text"
               placeholder="017XXXXXXXX"
               value="${currentUser ? escapeHtml(currentUser.user_phone) : ''}"
-              class="bg-dark-950 border border-dark-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+              class="bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs text-slate-900 font-mono placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:bg-white min-h-[34px]"
             />
             <input
               id="inline-name-${escapeHtml(p.id)}"
               type="text"
               placeholder="Your Name / City"
               value="${currentUser ? escapeHtml(currentUser.username) : ''}"
-              class="bg-dark-950 border border-dark-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+              class="bg-slate-50 border border-slate-200 rounded-md px-3 py-1.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:bg-white min-h-[34px]"
             />
-            <select id="inline-rating-${escapeHtml(p.id)}" class="bg-dark-950 border border-dark-700 rounded-lg px-2 py-1 text-xs text-cyan-400 font-mono">
+            <select id="inline-rating-${escapeHtml(p.id)}" class="bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-slate-400 focus:bg-white min-h-[34px]">
               <option value="5">Score: 5 / 5</option>
               <option value="4">Score: 4 / 5</option>
               <option value="3">Score: 3 / 5</option>
@@ -910,12 +1109,12 @@ function renderSingleCard(p) {
             id="inline-text-${escapeHtml(p.id)}"
             rows="2"
             placeholder="Share verified build notes, backlight bleed, store service, or warranty swap feedback..."
-            class="w-full bg-dark-950 border border-dark-700 rounded-lg p-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+            class="w-full bg-slate-50 border border-slate-200 rounded-md p-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-slate-400 focus:bg-white font-sans"
           ></textarea>
           <div class="flex justify-end">
             <button
               onclick="submitInlineReview('${escapeHtml(p.id)}')"
-              class="px-4 py-1.5 rounded-lg bg-dark-800 hover:bg-dark-750 text-white font-mono text-xs font-bold border border-dark-600 transition"
+              class="px-4 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition min-h-[32px]"
             >
               Post Review
             </button>
@@ -923,8 +1122,8 @@ function renderSingleCard(p) {
         </div>
 
         <!-- Product Comments Thread -->
-        <div id="comments-thread-${escapeHtml(p.id)}" class="space-y-2.5 max-h-64 overflow-y-auto custom-scrollbar">
-          <div class="text-xs text-slate-500 font-mono py-2">Loading reviews...</div>
+        <div id="comments-thread-${escapeHtml(p.id)}" class="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
+          <div class="text-xs text-slate-500 py-2">Loading reviews...</div>
         </div>
       </div>
 
@@ -987,33 +1186,33 @@ function openComparisonModal() {
     const affiliateUrl = buildAffiliateUrl(item.product_url, item.vendor_name);
 
     return `
-      <div class="p-4 bg-dark-950 border border-dark-700 rounded-xl space-y-3 flex flex-col justify-between">
+      <div class="p-4 bg-white border border-slate-200 rounded-lg space-y-3 flex flex-col justify-between shadow-2xs">
         <div>
-          <div class="h-32 bg-dark-900 rounded-lg p-2 border border-dark-800 flex items-center justify-center mb-3">
+          <div class="h-32 bg-slate-50 rounded-md p-2 border border-slate-200 flex items-center justify-center mb-3">
             <img src="${sanitizeUrl(item.image_url)}" alt="" class="max-h-full max-w-full object-contain" />
           </div>
-          <span class="px-2 py-0.5 rounded text-[10px] bg-dark-800 text-cyan-400 font-bold border border-dark-600">${escapeHtml(item.vendor_name)}</span>
-          <h4 class="font-bold text-white text-xs mt-2 line-clamp-2">${escapeHtml(item.title)}</h4>
-          <div class="text-xl font-bold text-white font-mono mt-2">৳ ${Number(item.current_price).toLocaleString()}</div>
-          <div class="text-[11px] text-emerald-400 font-mono">${escapeHtml(item.stock_status)}</div>
+          <span class="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700 font-medium border border-slate-200">${escapeHtml(item.vendor_name)}</span>
+          <h4 class="font-semibold text-slate-900 text-xs mt-2 line-clamp-2">${escapeHtml(item.title)}</h4>
+          <div class="text-xl font-bold text-slate-900 font-mono mt-2">৳ ${Number(item.current_price).toLocaleString()}</div>
+          <div class="text-xs text-emerald-700 font-medium">${escapeHtml(item.stock_status)}</div>
 
-          <div class="mt-3 pt-3 border-t border-dark-800">
-            <div class="text-[10px] text-slate-500 uppercase font-bold mb-1">Key Specifications:</div>
-            <ul class="text-[11px] text-slate-300 space-y-1">
+          <div class="mt-3 pt-3 border-t border-slate-200">
+            <div class="text-[10px] text-slate-400 uppercase font-semibold mb-1">Key Specifications:</div>
+            <ul class="text-xs text-slate-600 space-y-1">
               ${specsList || '<li>• Standard Component Specs</li>'}
               <li>• Official BD Warranty Included</li>
             </ul>
           </div>
         </div>
 
-        <div class="pt-3 border-t border-dark-800">
+        <div class="pt-3 border-t border-slate-200">
           <a
             href="${affiliateUrl}"
             target="_blank"
             rel="noopener noreferrer nofollow sponsored"
-            class="block w-full py-2 text-center rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs font-mono transition"
+            class="block w-full py-2 text-center rounded-md bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition"
           >
-            Buy on ${escapeHtml(item.vendor_name)} →
+            Visit ${escapeHtml(item.vendor_name)} →
           </a>
         </div>
       </div>
@@ -1040,7 +1239,7 @@ function renderCommunityPostsFeed() {
 
   if (filteredPosts.length === 0) {
     container.innerHTML = `
-      <div class="p-12 text-center text-slate-500 font-mono text-xs border border-dashed border-dark-700 rounded-xl">
+      <div class="p-12 text-center text-slate-500 text-xs border border-dashed border-slate-200 rounded-lg bg-white">
         No community discussions found. Be the first to start a topic above!
       </div>
     `;
@@ -1050,31 +1249,31 @@ function renderCommunityPostsFeed() {
   container.innerHTML = filteredPosts.map((post) => {
     const postTypeBadge = getPostTypeBadge(post.post_type);
     return `
-      <article class="p-4 bg-dark-900 border border-dark-700 rounded-xl space-y-2.5 hover:border-dark-600 transition shadow-sm">
-        <div class="flex items-center justify-between text-xs font-mono">
+      <article class="shadcn-card rounded-lg p-5 space-y-3 shadow-xs bg-white border border-slate-200">
+        <div class="flex items-center justify-between text-xs">
           <div class="flex items-center space-x-2">
-            <span class="font-bold text-cyan-400 cursor-pointer hover:underline" data-action="view-profile" data-username="${escapeHtml(post.author_name)}">
+            <span class="font-semibold text-slate-900 cursor-pointer hover:underline" data-action="view-profile" data-username="${escapeHtml(post.author_name)}">
               @${escapeHtml(post.author_name)}
             </span>
-            <span class="text-slate-600">•</span>
+            <span class="text-slate-300">•</span>
             <span class="text-slate-400">${formatTimeAgo(post.created_at)}</span>
           </div>
           ${postTypeBadge}
         </div>
 
-        <h3 class="text-base font-bold text-white tracking-tight">${escapeHtml(post.title)}</h3>
-        <p class="text-xs text-slate-300 leading-relaxed font-sans">${escapeHtml(post.content)}</p>
+        <h3 class="text-base font-semibold text-slate-900 tracking-tight">${escapeHtml(post.title)}</h3>
+        <p class="text-xs text-slate-600 leading-relaxed font-sans">${escapeHtml(post.content)}</p>
 
-        <div class="flex items-center justify-between pt-2 border-t border-dark-800 text-xs font-mono text-slate-400">
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs text-slate-500">
           <button
             data-action="upvote-post"
             data-id="${escapeHtml(post.id)}"
-            class="px-2.5 py-1 rounded-md bg-dark-950 border border-dark-700 hover:border-dark-600 flex items-center space-x-1.5 transition hover:text-white"
+            class="px-3 py-1.5 rounded-md bg-slate-50 border border-slate-200 hover:border-slate-300 hover:bg-slate-100 flex items-center space-x-1.5 transition text-slate-700 min-h-[32px]"
           >
-            <i data-lucide="arrow-big-up" class="w-3.5 h-3.5 text-emerald-400 pointer-events-none"></i>
+            <i data-lucide="arrow-big-up" class="w-3.5 h-3.5 text-emerald-600 pointer-events-none"></i>
             <span class="pointer-events-none">${post.upvotes_count || 0} Upvotes</span>
           </button>
-          <span class="text-[11px] text-slate-500">Verified BD Tech Builder</span>
+          <span class="text-xs text-slate-400">Verified BD Tech Builder</span>
         </div>
       </article>
     `;
@@ -1085,10 +1284,10 @@ function renderCommunityPostsFeed() {
 
 function getPostTypeBadge(type) {
   switch (type) {
-    case "Deal Alert": return `<span class="px-2 py-0.5 rounded text-[10px] bg-rose-950 text-rose-400 border border-rose-800 font-mono font-bold tracking-wider uppercase">Deal Alert</span>`;
-    case "Build Help": return `<span class="px-2 py-0.5 rounded text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono font-bold tracking-wider uppercase">Build Help</span>`;
-    case "Question": return `<span class="px-2 py-0.5 rounded text-[10px] bg-amber-950 text-amber-400 border border-amber-800 font-mono font-bold tracking-wider uppercase">Question</span>`;
-    default: return `<span class="px-2 py-0.5 rounded text-[10px] bg-dark-800 text-slate-300 border border-dark-600 font-mono font-bold tracking-wider uppercase">Discussion</span>`;
+    case "Deal Alert": return `<span class="px-2 py-0.5 rounded text-xs bg-rose-50 text-rose-700 border border-rose-200 font-medium">Deal Alert</span>`;
+    case "Build Help": return `<span class="px-2 py-0.5 rounded text-xs bg-sky-50 text-sky-700 border border-sky-200 font-medium">Build Help</span>`;
+    case "Question": return `<span class="px-2 py-0.5 rounded text-xs bg-amber-50 text-amber-700 border border-amber-200 font-medium">Question</span>`;
+    default: return `<span class="px-2 py-0.5 rounded text-xs bg-slate-100 text-slate-700 border border-slate-200 font-medium">Discussion</span>`;
   }
 }
 
@@ -1152,12 +1351,12 @@ function renderInlineChart(product) {
         {
           label: "Cash Price in BDT",
           data: dataPoints,
-          borderColor: "#77d4ff",
-          backgroundColor: "rgba(119, 212, 255, 0.08)",
+          borderColor: "#059669",
+          backgroundColor: "rgba(5, 150, 105, 0.08)",
           fill: true,
           tension: 0.2,
-          pointBackgroundColor: "#77d4ff",
-          pointBorderColor: "#0b0f14",
+          pointBackgroundColor: "#059669",
+          pointBorderColor: "#ffffff",
           pointRadius: 4,
           borderWidth: 2,
         },
@@ -1169,10 +1368,10 @@ function renderInlineChart(product) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: "#111821",
-          borderColor: "#2a3745",
+          backgroundColor: "#0f172a",
+          borderColor: "#334155",
           borderWidth: 1,
-          titleFont: { family: "JetBrains Mono" },
+          titleFont: { family: "Inter" },
           bodyFont: { family: "JetBrains Mono" },
           callbacks: {
             label: (ctx) => ` ৳ ${Number(ctx.parsed.y).toLocaleString("en-US")}`,
@@ -1181,13 +1380,13 @@ function renderInlineChart(product) {
       },
       scales: {
         x: {
-          grid: { color: "rgba(42, 55, 69, 0.5)" },
-          ticks: { color: "#a7b4c3", font: { family: "JetBrains Mono", size: 10 } },
+          grid: { color: "rgba(226, 232, 240, 0.8)" },
+          ticks: { color: "#64748b", font: { family: "Inter", size: 10 } },
         },
         y: {
-          grid: { color: "rgba(42, 55, 69, 0.5)" },
+          grid: { color: "rgba(226, 232, 240, 0.8)" },
           ticks: {
-            color: "#a7b4c3",
+            color: "#64748b",
             font: { family: "JetBrains Mono", size: 10 },
             callback: (val) => `৳ ${Number(val).toLocaleString()}`,
           },
@@ -1246,21 +1445,21 @@ async function loadProductComments(productId) {
     thread.innerHTML = data.map((r) => {
       const rawRating = Math.max(1, Math.min(5, Number(r.rating) || 5));
       const maskedPhone = escapeHtml(String(r.user_phone || "").replace(/^(\+?880?1[3-9]\d)(\d{4})(\d{3})$/, "$1••••$3"));
-      const scoreBadge = `<span class="px-1.5 py-0.2 rounded bg-dark-800 text-cyan-400 font-mono text-[10px] font-bold border border-dark-700">Rating: ${rawRating}/5</span>`;
+      const scoreBadge = `<span class="px-2 py-0.5 rounded bg-amber-50 text-amber-800 font-medium text-xs border border-amber-200">★ ${rawRating}/5</span>`;
 
       return `
-        <div class="p-2.5 bg-dark-900 border border-dark-700 rounded-lg space-y-1">
+        <div class="p-3 bg-white border border-slate-200 rounded-md space-y-1.5 shadow-2xs">
           <div class="flex items-center justify-between text-xs">
             <div class="flex items-center space-x-2">
-              <span class="font-bold text-white text-[11px] font-mono cursor-pointer hover:underline" data-action="view-profile" data-username="${escapeHtml(r.user_name || 'Buyer')}">
+              <span class="font-medium text-slate-900 text-xs cursor-pointer hover:underline" data-action="view-profile" data-username="${escapeHtml(r.user_name || 'Buyer')}">
                 @${escapeHtml(r.user_name || 'Buyer')}
               </span>
-              <span class="text-[10px] font-mono px-1 py-0.2 rounded bg-dark-800 text-slate-400">${maskedPhone}</span>
+              <span class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">${maskedPhone}</span>
             </div>
             ${scoreBadge}
           </div>
-          <p class="text-xs text-slate-300 leading-normal font-sans">${escapeHtml(r.comment_text)}</p>
-          <div class="text-[10px] font-mono text-slate-500 flex justify-between pt-0.5">
+          <p class="text-xs text-slate-700 leading-normal font-sans">${escapeHtml(r.comment_text)}</p>
+          <div class="text-[11px] text-slate-400 flex justify-between pt-1 border-t border-slate-100">
             <span>${formatTimeAgo(r.created_at)}</span>
             <span>Helpful (${r.helpful_count || 0})</span>
           </div>
@@ -1269,7 +1468,7 @@ async function loadProductComments(productId) {
     }).join("");
 
   } catch (err) {
-    thread.innerHTML = `<div class="text-xs text-red-400 font-mono">Error: ${escapeHtml(err.message)}</div>`;
+    thread.innerHTML = `<div class="text-xs text-red-600 font-mono">Error: ${escapeHtml(err.message)}</div>`;
   }
 }
 
@@ -1355,6 +1554,7 @@ async function submitComposerReview() {
     if (error) throw error;
 
     document.getElementById("composer-text").value = "";
+    closeReviewModal();
     showToast("Review published to community feed!");
     fetchLiveRecentReviews();
     if (openCommentsProductId === productId) {
@@ -1429,27 +1629,27 @@ async function fetchLiveRecentReviews() {
     if (error) throw error;
 
     if (!data || data.length === 0) {
-      container.innerHTML = `<div class="text-xs text-slate-500 font-mono py-2">No reviews recorded yet.</div>`;
+      container.innerHTML = `<div class="text-xs text-slate-400 font-mono py-2">No reviews recorded yet.</div>`;
       return;
     }
 
     container.innerHTML = data.map((r) => {
       const rawRating = Math.max(1, Math.min(5, Number(r.rating) || 5));
       const maskedPhone = escapeHtml(String(r.user_phone || "").replace(/^(\+?880?1[3-9]\d)(\d{4})(\d{3})$/, "$1••••$3"));
-      const scoreBadge = `<span class="px-1.5 py-0.2 rounded bg-dark-800 text-cyan-400 font-mono text-[10px] font-bold border border-dark-700">${rawRating}/5</span>`;
+      const scoreBadge = `<span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 font-mono text-[10px] border border-amber-200">★ ${rawRating}/5</span>`;
       const productTitle = r.products ? r.products.title : "Component";
 
       return `
-        <div class="p-2.5 bg-dark-950/70 border border-dark-700 rounded-lg space-y-1.5 hover:border-dark-600 transition cursor-pointer" data-action="highlight-product" data-id="${escapeHtml(r.product_id)}">
-          <div class="flex items-center justify-between text-[11px] font-mono">
-            <span class="font-bold text-white">${escapeHtml(r.user_name || 'Buyer')}</span>
+        <div class="p-3 bg-white border border-slate-200 rounded-md space-y-1 hover:border-slate-300 shadow-2xs transition cursor-pointer" data-action="highlight-product" data-id="${escapeHtml(r.product_id)}">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-medium text-slate-900">${escapeHtml(r.user_name || 'Buyer')}</span>
             ${scoreBadge}
           </div>
-          <div class="text-[10px] font-mono text-cyan-400 truncate">
+          <div class="text-[11px] text-slate-500 truncate">
             Re: ${escapeHtml(productTitle)}
           </div>
-          <p class="text-xs text-slate-300 line-clamp-2 leading-relaxed font-sans">${escapeHtml(r.comment_text)}</p>
-          <div class="text-[10px] font-mono text-slate-500 flex justify-between pt-0.5">
+          <p class="text-xs text-slate-600 line-clamp-2 leading-relaxed font-sans">${escapeHtml(r.comment_text)}</p>
+          <div class="text-[11px] text-slate-400 flex justify-between pt-1 border-t border-slate-100">
             <span>${maskedPhone}</span>
             <span>${formatTimeAgo(r.created_at)}</span>
           </div>
@@ -1471,8 +1671,8 @@ function highlightProduct(productId) {
   const card = document.getElementById(`card-${productId}`);
   if (card) {
     card.scrollIntoView({ behavior: "smooth", block: "center" });
-    card.classList.add("ring-2", "ring-cyan-400", "glow-active");
-    setTimeout(() => card.classList.remove("ring-2", "ring-cyan-400", "glow-active"), 3000);
+    card.classList.add("ring-2", "ring-emerald-500");
+    setTimeout(() => card.classList.remove("ring-2", "ring-emerald-500"), 3000);
     toggleCommentsInline(productId);
   } else {
     const product = allProducts.find((p) => p.id === productId);
@@ -1590,8 +1790,8 @@ function updateUserUI() {
 
   if (!currentUser) {
     container.innerHTML = `
-      <button onclick="openAuthModal()" class="px-3 py-1.5 rounded-lg bg-dark-850 hover:bg-dark-800 text-white font-medium border border-dark-700 transition flex items-center space-x-1.5 text-xs">
-        <i data-lucide="user-plus" class="w-3.5 h-3.5 text-emerald-400"></i>
+      <button onclick="openAuthModal()" class="px-3.5 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-800 font-medium border border-slate-200 transition flex items-center space-x-1.5 text-xs min-h-[34px] shadow-2xs">
+        <i data-lucide="user-plus" class="w-3.5 h-3.5 text-slate-500"></i>
         <span>Sign In</span>
       </button>
     `;
@@ -1602,13 +1802,13 @@ function updateUserUI() {
   const initials = currentUser.username.substring(0, 2).toUpperCase();
   container.innerHTML = `
     <div class="flex items-center space-x-2">
-      <button onclick="openUserProfileModal('${escapeHtml(currentUser.username)}')" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-dark-850 hover:bg-dark-800 border border-dark-700 text-white text-xs font-mono">
-        <div class="h-4 w-4 rounded-full bg-emerald-500 text-[10px] flex items-center justify-center font-bold text-black">
+      <button onclick="openUserProfileModal('${escapeHtml(currentUser.username)}')" class="flex items-center space-x-2 px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs min-h-[34px] shadow-2xs">
+        <div class="h-4 w-4 rounded-full bg-emerald-600 text-[10px] flex items-center justify-center font-bold text-white">
           ${initials}
         </div>
         <span>@${escapeHtml(currentUser.username)}</span>
       </button>
-      <button onclick="handleLogout()" class="text-slate-500 hover:text-red-400 text-[11px] font-mono px-1" title="Sign Out">[Exit]</button>
+      <button onclick="handleLogout()" class="text-slate-400 hover:text-red-600 text-xs px-1.5" title="Sign Out">Exit</button>
     </div>
   `;
 
@@ -1698,12 +1898,12 @@ async function openUserProfileModal(username) {
 
     const { data: reviews } = await sb.from("comments").select("*, products(title, vendor_name)").eq("user_name", username).limit(5);
     if (!reviews || reviews.length === 0) {
-      reviewsContainer.innerHTML = `<div class="text-slate-500 py-1">No product reviews published yet.</div>`;
+      reviewsContainer.innerHTML = `<div class="text-slate-400 py-1">No product reviews published yet.</div>`;
     } else {
       reviewsContainer.innerHTML = reviews.map((r) => `
-        <div class="p-2.5 bg-dark-950 border border-dark-700 rounded-lg">
-          <div class="text-[10px] text-cyan-400 font-bold truncate">Re: ${escapeHtml(r.products ? r.products.title : 'Hardware')}</div>
-          <p class="text-[11px] text-slate-300 line-clamp-2 mt-0.5">${escapeHtml(r.comment_text)}</p>
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-md space-y-1">
+          <div class="text-xs text-slate-800 font-medium truncate">Re: ${escapeHtml(r.products ? r.products.title : 'Hardware')}</div>
+          <p class="text-xs text-slate-600 line-clamp-2 mt-0.5">${escapeHtml(r.comment_text)}</p>
         </div>
       `).join("");
     }
@@ -1834,29 +2034,29 @@ function renderBuildLab() {
       const safeAffUrl = buildAffiliateUrl(item.product_url, item.vendor_name);
 
       html += `
-        <div class="p-3 bg-dark-950 border border-dark-700 rounded-lg flex items-center justify-between gap-3">
+        <div class="p-3 bg-white border border-slate-200 rounded-md flex items-center justify-between gap-3 shadow-2xs">
           <div class="flex items-center space-x-3 min-w-0">
-            <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold uppercase w-24 text-center flex-shrink-0">
+            <span class="px-2 py-1 rounded bg-slate-100 text-slate-700 border border-slate-200 text-xs font-medium w-24 text-center flex-shrink-0">
               ${slot.label.split(" ")[0]}
             </span>
             <div class="min-w-0">
-              <div class="font-bold text-white text-xs truncate">${escapeHtml(item.title)}</div>
-              <div class="text-[10px] text-slate-400 flex items-center space-x-2">
-                <span>Store: <strong class="text-slate-300">${escapeHtml(item.vendor_name)}</strong></span>
+              <div class="font-medium text-slate-900 text-xs truncate">${escapeHtml(item.title)}</div>
+              <div class="text-[11px] text-slate-500 flex items-center space-x-2 mt-0.5">
+                <span>Store: <strong class="text-slate-700 font-medium">${escapeHtml(item.vendor_name)}</strong></span>
                 <span>•</span>
-                <span class="text-emerald-400">${escapeHtml(item.stock_status)}</span>
+                <span class="text-emerald-700 font-medium">${escapeHtml(item.stock_status)}</span>
               </div>
             </div>
           </div>
           <div class="flex items-center space-x-3 flex-shrink-0">
             <div class="text-right">
-              <div class="text-xs font-bold text-white">৳ ${itemPrice.toLocaleString()}</div>
-              <div class="text-[9px] text-slate-500 uppercase">${activePriceMode === 'CASH' ? 'Cash' : 'Card POS'}</div>
+              <div class="text-xs font-semibold text-slate-900 font-mono">৳ ${itemPrice.toLocaleString()}</div>
+              <div class="text-[10px] text-slate-400 uppercase">${activePriceMode === 'CASH' ? 'Cash' : 'Card POS'}</div>
             </div>
-            <a href="${safeAffUrl}" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded hover:text-white text-cyan-400 transition" title="Open Store Listing">
+            <a href="${safeAffUrl}" target="_blank" rel="noopener noreferrer" class="p-1.5 rounded hover:text-slate-900 text-slate-400 hover:bg-slate-100 transition" title="Open Store Listing">
               <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
             </a>
-            <button data-action="remove-from-build" data-id="${slot.key}" class="p-1.5 rounded hover:text-rose-400 text-slate-500 transition" title="Remove Component">
+            <button data-action="remove-from-build" data-id="${slot.key}" class="p-1.5 rounded hover:text-rose-600 text-slate-400 hover:bg-slate-100 transition" title="Remove Component">
               <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
             </button>
           </div>
@@ -1864,14 +2064,14 @@ function renderBuildLab() {
       `;
     } else {
       html += `
-        <div class="p-3 bg-dark-950/40 border border-dashed border-dark-800 rounded-lg flex items-center justify-between gap-3 text-slate-500">
+        <div class="p-3 bg-slate-50 border border-dashed border-slate-200 rounded-md flex items-center justify-between gap-3 text-slate-500">
           <div class="flex items-center space-x-3">
-            <span class="px-2 py-0.5 rounded bg-dark-900 text-slate-400 border border-dark-700 text-[10px] font-mono uppercase w-24 text-center">
+            <span class="px-2 py-1 rounded bg-white text-slate-600 border border-slate-200 text-xs w-24 text-center">
               ${slot.label.split(" ")[0]}
             </span>
             <span class="text-xs">No component selected for this slot</span>
           </div>
-          <button onclick="setCategoryFilter('${slot.key === 'Storage' ? 'SSD' : slot.key}'); switchMainFeedMode('CATALOG');" class="px-2.5 py-1 rounded bg-dark-900 hover:bg-dark-800 text-cyan-400 hover:text-cyan-300 border border-dark-700 text-[11px] font-mono transition">
+          <button onclick="setCategoryFilter('${slot.key === 'Storage' ? 'SSD' : slot.key}'); switchMainFeedMode('CATALOG');" class="px-2.5 py-1 rounded bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-medium transition shadow-2xs">
             + Choose ${slot.label.split(" ")[0]}
           </button>
         </div>
@@ -1886,7 +2086,7 @@ function renderBuildLab() {
   if (compatText && compatBox) {
     if (activeSlotsCount === 0) {
       compatText.innerText = "Select components from the catalog to run live socket, power, and dimensional checks.";
-      compatBox.className = "p-3 rounded-lg bg-dark-950 border border-dark-700 text-xs font-mono flex items-start space-x-2.5 text-slate-400";
+      compatBox.className = "p-3 rounded-md bg-slate-50 border border-slate-200 text-xs flex items-start space-x-2.5 text-slate-500";
     } else {
       const cpu = buildLabSlots["Processor"];
       if (cpu) {
@@ -1896,11 +2096,11 @@ function renderBuildLab() {
         else if (titleL.includes("am4")) socket = "AMD AM4 (Requires DDR4 & AM4 Board)";
         else if (titleL.includes("lga1700") || titleL.includes("lga 1700")) socket = "Intel LGA1700 (12th/13th/14th Gen)";
         
-        compatText.innerHTML = `<span class="text-emerald-400 font-bold">Verified Socket:</span> ${socket}. All chosen items are in stock across verified Bangladesh stores.`;
-        compatBox.className = "p-3 rounded-lg bg-dark-950 border border-emerald-900/60 text-xs font-mono flex items-start space-x-2.5 text-slate-300";
+        compatText.innerHTML = `<span class="text-emerald-700 font-semibold">Verified Socket:</span> ${socket}. All chosen items are in stock across verified Bangladesh stores.`;
+        compatBox.className = "p-3 rounded-md bg-emerald-50/50 border border-emerald-200 text-xs flex items-start space-x-2.5 text-slate-700";
       } else {
         compatText.innerText = "Components slotted successfully. No electrical or dimensional conflicts detected.";
-        compatBox.className = "p-3 rounded-lg bg-dark-950 border border-emerald-900/40 text-xs font-mono flex items-start space-x-2.5 text-slate-300";
+        compatBox.className = "p-3 rounded-md bg-slate-50 border border-slate-200 text-xs flex items-start space-x-2.5 text-slate-700";
       }
     }
   }
@@ -1919,7 +2119,7 @@ function renderPriceRadar() {
   const itemsWithHistory = allProducts.filter((p) => Number(p.current_price) > 0).slice(0, 20);
 
   let html = `
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
   `;
 
   itemsWithHistory.forEach((item) => {
@@ -1928,35 +2128,36 @@ function renderPriceRadar() {
     const regularRef = Math.round(cash * 1.12);
     const savings = regularRef - cash;
     const safeAffUrl = buildAffiliateUrl(item.product_url, item.vendor_name);
+    const vendorTheme = getVendorTheme(item.vendor_name);
 
     html += `
-      <div class="p-3.5 bg-dark-950 border border-dark-700/80 rounded-xl space-y-2 hover:border-amber-500/50 transition">
+      <div class="shadcn-card p-4 rounded-lg space-y-2.5 shadow-2xs bg-white border border-slate-200">
         <div class="flex items-center justify-between">
-          <span class="px-2 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800 text-[10px] font-bold uppercase">
+          <span class="px-2 py-0.5 rounded ${vendorTheme.badge} text-xs font-medium">
             ${escapeHtml(item.vendor_name)}
           </span>
-          <span class="text-[10px] text-slate-500 font-mono">Checked ${formatTimeAgo(item.last_scraped_at)}</span>
+          <span class="text-slate-400 text-xs">Checked ${formatTimeAgo(item.last_scraped_at)}</span>
         </div>
-        <div class="font-bold text-white text-xs line-clamp-2">${escapeHtml(item.title)}</div>
-        <div class="flex items-baseline justify-between pt-1 border-t border-dark-800">
+        <div class="font-medium text-slate-900 text-xs line-clamp-2">${escapeHtml(item.title)}</div>
+        <div class="flex items-baseline justify-between pt-2 border-t border-slate-100">
           <div>
-            <div class="text-[10px] text-slate-500 uppercase">Cash Special</div>
-            <div class="text-sm font-black text-emerald-400">৳ ${cash.toLocaleString()}</div>
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider">Cash Special</div>
+            <div class="text-sm font-bold text-emerald-700 font-mono">৳ ${cash.toLocaleString()}</div>
           </div>
           <div class="text-right">
-            <div class="text-[10px] text-slate-500 uppercase">Regular POS</div>
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider">Regular POS</div>
             <div class="text-xs font-mono text-slate-400"><del>৳ ${regularRef.toLocaleString()}</del></div>
           </div>
           <div class="text-right">
-            <div class="text-[10px] text-emerald-400 font-bold uppercase">Dealer Margin Save</div>
-            <div class="text-xs font-bold text-emerald-300">Save ৳ ${savings.toLocaleString()}</div>
+            <div class="text-[10px] text-emerald-700 font-medium uppercase tracking-wider">Estimated Save</div>
+            <div class="text-xs font-semibold text-emerald-700 font-mono">৳ ${savings.toLocaleString()}</div>
           </div>
         </div>
-        <div class="pt-1 flex items-center justify-between text-[11px]">
-          <span class="text-slate-400">${escapeHtml(item.stock_status)}</span>
-          <a href="${safeAffUrl}" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline flex items-center space-x-1">
-            <span>Direct Deal</span>
-            <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+        <div class="pt-1.5 flex items-center justify-between text-xs border-t border-slate-100">
+          <span class="text-slate-500">${escapeHtml(item.stock_status)}</span>
+          <a href="${safeAffUrl}" target="_blank" rel="noopener noreferrer" class="text-slate-700 hover:text-blue-600 flex items-center space-x-1 font-medium">
+            <span>View Deal</span>
+            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-slate-400"></i>
           </a>
         </div>
       </div>
@@ -1985,33 +2186,33 @@ function showToast(msg) {
 function getVendorTheme(vendor) {
   const v = (vendor || "").toLowerCase();
   if (v.includes("star tech")) return { 
-    badge: "bg-red-950/80 text-red-400 border border-red-800 font-bold",
-    borderAccent: "border-l-2 border-l-red-500",
+    badge: "bg-red-50 text-red-700 border border-red-200 font-medium",
+    borderAccent: "",
     hub: "Elephant Rd & IDB"
   };
   if (v.includes("tech land")) return { 
-    badge: "bg-orange-950/80 text-orange-400 border border-orange-800 font-bold",
-    borderAccent: "border-l-2 border-l-orange-500",
+    badge: "bg-amber-50 text-amber-700 border border-amber-200 font-medium",
+    borderAccent: "",
     hub: "Multiplan Level 5"
   };
   if (v.includes("ryans")) return { 
-    badge: "bg-sky-950/80 text-sky-400 border border-sky-800 font-bold",
-    borderAccent: "border-l-2 border-l-sky-500",
+    badge: "bg-sky-50 text-sky-700 border border-sky-200 font-medium",
+    borderAccent: "",
     hub: "Kakrail & Banani"
   };
   if (v.includes("bdstall")) return { 
-    badge: "bg-emerald-950/80 text-emerald-400 border border-emerald-800 font-bold",
-    borderAccent: "border-l-2 border-l-emerald-500",
+    badge: "bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium",
+    borderAccent: "",
     hub: "Courier 24h"
   };
   if (v.includes("binary logic")) return { 
-    badge: "bg-indigo-950/80 text-indigo-400 border border-indigo-800 font-bold",
-    borderAccent: "border-l-2 border-l-indigo-500",
+    badge: "bg-indigo-50 text-indigo-700 border border-indigo-200 font-medium",
+    borderAccent: "",
     hub: "Computer City L4"
   };
   return { 
-    badge: "bg-dark-800 text-slate-300 border border-dark-700",
-    borderAccent: "border-l-2 border-l-cyan-500",
+    badge: "bg-slate-100 text-slate-700 border border-slate-200 font-medium",
+    borderAccent: "",
     hub: "Dhaka Retail"
   };
 }
