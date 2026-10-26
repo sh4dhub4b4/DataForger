@@ -1,6 +1,12 @@
 name: Daily TechPulse Hardware Scraper
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'scraper/**'
+      - '.github/workflows/daily-scraper.yml'
   schedule:
     # 05:00 UTC = 11:00 AM Bangladesh Standard Time (BST, UTC+6)
     - cron: '0 5 * * *'
