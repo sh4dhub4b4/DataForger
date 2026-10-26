@@ -31,14 +31,14 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.25'
           cache-dependency-path: scraper/go.sum
 
       - name: Build Scraper Binary
         working-directory: ./scraper
         run: |
           go mod download
-          go build -o scraper-runner .
+          go build -v -o scraper-runner .
 
       - name: Execute Scraper & Push to Supabase
         working-directory: ./scraper
@@ -46,7 +46,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://fuzwizxysoqcpucpllku.supabase.co' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          CATEGORY="${{ github.event.inputs.category || 'SSD' }}"
-          PAGES="${{ github.event.inputs.max_pages || '2' }}"
+          CATEGORY="${{ inputs.category || github.event.inputs.category || 'all' }}"
+          PAGES="${{ inputs.max_pages || github.event.inputs.max_pages || '2' }}"
           echo "Running Scraper for Category: $CATEGORY with max pages: $PAGES"
           ./scraper-runner -category "$CATEGORY" -pages "$PAGES"
