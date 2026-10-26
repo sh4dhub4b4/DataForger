@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "name": "PotakaIT_Processor",
+    "url": "https://potakait.com/processors?limit=500"
+  },
+  "container": {
+    "selector": "div.product-item",
+    "type": "css"
+  },
+  "pagination": {
+    "type": "next_button",
+    "selector": "ul.pagination li:last-child a",
+    "limit": 3
+  },
+  "fields": [
+    {
+      "name": "Title",
+      "selector": "h4.title a",
+      "attr": "text",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Link",
+      "selector": "h4.title a",
+      "attr": "href",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Image",
+      "selector": "img",
+      "attr": "src",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Price",
+      "selector": "p.price",
+      "attr": "text",
+      "filter": "number",
+      "formula": ""
+    },
+    {
+      "name": "Status",
+      "selector": "a.add-to-cart",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "trim | replace('Add to Cart', '1') | if_num('In Stock', 'Out Of Stock')"
+    }
+  ]
+}

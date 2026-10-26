@@ -30,14 +30,18 @@ func deduceVendorAndCategory(configName, folderName string) (string, string) {
 		vendor = "BDstall"
 	case strings.Contains(lower, "binarylogic"):
 		vendor = "Binary Logic"
-	case strings.Contains(lower, "computer_village"):
+	case strings.Contains(lower, "computer_village") || strings.Contains(lower, "computervillage"):
 		vendor = "Computer Village"
-	case strings.Contains(lower, "pc_house"):
+	case strings.Contains(lower, "pc_house") || strings.Contains(lower, "pchouse"):
 		vendor = "PC House BD"
 	case strings.Contains(lower, "potakait"):
 		vendor = "Potaka IT"
 	case strings.Contains(lower, "ucc"):
 		vendor = "UCC"
+	case strings.Contains(lower, "selltech"):
+		vendor = "SellTech"
+	case strings.Contains(lower, "ultratech"):
+		vendor = "UltraTech"
 	default:
 		vendor = configName
 	}

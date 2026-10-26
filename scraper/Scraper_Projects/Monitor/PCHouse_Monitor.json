@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "name": "PCHouse_Monitor",
+    "url": "https://www.pchouse.com.bd/monitor?limit=500"
+  },
+  "container": {
+    "selector": "div.single-product-item, div.product-item-info",
+    "type": "css"
+  },
+  "pagination": {
+    "type": "next_button",
+    "selector": "ul.pagination li a",
+    "limit": 3
+  },
+  "fields": [
+    {
+      "name": "Title",
+      "selector": "div.product-item-info h4 a, h4 a",
+      "attr": "text",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Link",
+      "selector": "div.product-item-info h4 a, h4 a",
+      "attr": "href",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Image",
+      "selector": "img",
+      "attr": "src",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Price",
+      "selector": "div.price-info span:first-child, span.price",
+      "attr": "text",
+      "filter": "number",
+      "formula": ""
+    },
+    {
+      "name": "Status",
+      "selector": "button.buy-btn",
+      "attr": "text",
+      "filter": "none",
+      "formula": ""
+    }
+  ]
+}

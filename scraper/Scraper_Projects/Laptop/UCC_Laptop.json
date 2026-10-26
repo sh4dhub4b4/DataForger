@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "name": "UCC_Laptop",
+    "url": "https://www.ucc.com.bd/laptops?limit=500"
+  },
+  "container": {
+    "selector": "div.product-thumb",
+    "type": "css"
+  },
+  "pagination": {
+    "type": "next_button",
+    "selector": "ul.pagination li a",
+    "limit": 3
+  },
+  "fields": [
+    {
+      "name": "Title",
+      "selector": "div.name a",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "trim | replace('|','')"
+    },
+    {
+      "name": "Link",
+      "selector": "div.name a",
+      "attr": "href",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Image",
+      "selector": "img",
+      "attr": "src",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Price",
+      "selector": "div.price div span",
+      "attr": "text",
+      "filter": "number",
+      "formula": ""
+    },
+    {
+      "name": "Status",
+      "selector": "span.stat-1 span:nth-child(2), div.cart-group",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "replace('Buy Now','In Stock') | trim"
+    }
+  ]
+}

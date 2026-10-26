@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "name": "Startech_Processor",
+    "url": "https://www.startech.com.bd/component/processor?limit=90"
+  },
+  "container": {
+    "selector": "div.p-item",
+    "type": "css"
+  },
+  "pagination": {
+    "type": "page_loop",
+    "selector": "page",
+    "limit": 3
+  },
+  "fields": [
+    {
+      "name": "Title",
+      "selector": "h4.p-item-name a",
+      "attr": "text",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Link",
+      "selector": "h4.p-item-name a",
+      "attr": "href",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Image",
+      "selector": "div.p-item-img a img",
+      "attr": "src",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Price",
+      "selector": "div.p-item-price span",
+      "attr": "text",
+      "filter": "number",
+      "formula": ""
+    },
+    {
+      "name": "Status",
+      "selector": "div.p-item-price span",
+      "attr": "text",
+      "filter": "none",
+      "formula": ""
+    }
+  ]
+}

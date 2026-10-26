@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "name": "Techland_Processor",
+    "url": "https://www.techlandbd.com/pc-components/processor"
+  },
+  "container": {
+    "selector": "div.products-list__item, article.products-list__item",
+    "type": "css"
+  },
+  "pagination": {
+    "type": "page_loop",
+    "selector": "page",
+    "limit": 3
+  },
+  "fields": [
+    {
+      "name": "Title",
+      "selector": "a.product-title, h4 a, h2.v2-card-title",
+      "attr": "text",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Link",
+      "selector": "a.product-title, h4 a, a.block",
+      "attr": "href",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Image",
+      "selector": "img.img-responsive, img",
+      "attr": "src",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Price",
+      "selector": "div.price_box, span.text-base, span.price-new, div.text-red-600",
+      "attr": "text",
+      "filter": "number",
+      "formula": ""
+    },
+    {
+      "name": "Status",
+      "selector": "div.bengali-text, div.text-right p",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "trim | if_num('In Stock','In Stock')"
+    }
+  ]
+}

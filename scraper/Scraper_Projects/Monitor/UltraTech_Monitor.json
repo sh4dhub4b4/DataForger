@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "name": "UltraTech_Monitor",
+    "url": "https://ultratech.com.bd/monitor?limit=500"
+  },
+  "container": {
+    "selector": "div.product-thumb, div.product-layout",
+    "type": "css"
+  },
+  "pagination": {
+    "type": "page_loop",
+    "selector": "page",
+    "limit": 3
+  },
+  "fields": [
+    {
+      "name": "Title",
+      "selector": "div.name a",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "trim | replace('|','')"
+    },
+    {
+      "name": "Link",
+      "selector": "div.name a",
+      "attr": "href",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Image",
+      "selector": "img",
+      "attr": "src",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Price",
+      "selector": "div.price div span:first-child, span.price-normal",
+      "attr": "text",
+      "filter": "number",
+      "formula": ""
+    },
+    {
+      "name": "Status",
+      "selector": "div.cart-group, span.price-normal",
+      "attr": "text",
+      "filter": "none",
+      "formula": ""
+    }
+  ]
+}

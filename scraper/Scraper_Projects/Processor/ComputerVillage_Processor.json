@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "name": "ComputerVillage_Processor",
+    "url": "https://www.computervillage.com.bd/processor?limit=500"
+  },
+  "container": {
+    "selector": "div.product-thumb",
+    "type": "css"
+  },
+  "pagination": {
+    "type": "page_loop",
+    "selector": "page",
+    "limit": 3
+  },
+  "fields": [
+    {
+      "name": "Title",
+      "selector": "div.name a",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "trim | replace('|','')"
+    },
+    {
+      "name": "Link",
+      "selector": "div.name a",
+      "attr": "href",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Image",
+      "selector": "img",
+      "attr": "src",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Price",
+      "selector": "span.price-new, span.price-normal",
+      "attr": "text",
+      "filter": "number",
+      "formula": ""
+    },
+    {
+      "name": "Status",
+      "selector": "span.price-normal, span.price-new",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "replace('\u09f3', '1') | if_num('In Stock', 'Out Of Stock')"
+    }
+  ]
+}

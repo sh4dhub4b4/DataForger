@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "name": "BDstall_Monitor",
+    "url": "https://www.bdstall.com/monitor/"
+  },
+  "container": {
+    "selector": "div.product-grid, div.cat-main div.col-md-3, a:has(.product-cat-box-grid)",
+    "type": "css"
+  },
+  "pagination": {
+    "type": "next_button",
+    "selector": "span.page-next-link a, ul.pagination li.active + li a",
+    "limit": 3
+  },
+  "fields": [
+    {
+      "name": "Title",
+      "selector": "a[href*='/details/'], div.product-cat-box-grid-item-type",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "trim | replace('|','') | normalize"
+    },
+    {
+      "name": "Link",
+      "selector": "a[href*='/details/']",
+      "attr": "href",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Image",
+      "selector": "img[src*='cdn.bdstall.com'], div.ibox img, img",
+      "attr": "src",
+      "filter": "none",
+      "formula": ""
+    },
+    {
+      "name": "Price",
+      "selector": "b, span.price, div.product-cat-box-grid-price",
+      "attr": "text",
+      "filter": "number",
+      "formula": ""
+    },
+    {
+      "name": "Status",
+      "selector": "div.in-stock",
+      "attr": "text",
+      "filter": "custom",
+      "formula": "replace('In Stock', '1') | if_num('In Stock', 'Out Of Stock')"
+    }
+  ]
+}
