@@ -18,7 +18,7 @@
       "selector": "h4.p-item-name a",
       "attr": "text",
       "filter": "custom",
-      "formula": "trim | remove('||')"
+      "formula": "trim"
     },
     {
       "name": "Link",

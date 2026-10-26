@@ -208,7 +208,9 @@ func RunConfigWithSupabase(configPath string, supa *SupabaseClient, maxPages int
 		limit = maxPages
 	}
 
-	if config.Pagination.Type == "page_loop" {
+	if strings.Contains(config.Meta.URL, "web.archive.org") {
+		c.Visit(config.Meta.URL)
+	} else if config.Pagination.Type == "page_loop" {
 		param := config.Pagination.Selector
 		if param == "" {
 			param = "page"

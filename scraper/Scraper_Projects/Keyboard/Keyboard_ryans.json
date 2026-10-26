@@ -18,7 +18,7 @@
       "selector": "p.card-text a, div.text-center span.list-view-text a",
       "attr": "text",
       "filter": "custom",
-      "formula": "trim | replace('|','')"
+      "formula": "trim"
     },
     {
       "name": "Link",

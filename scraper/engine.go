@@ -16,14 +16,39 @@ import (
 var numberRegex = regexp.MustCompile(`[0-9]+(\.[0-9]+)?`)
 var digitRegex = regexp.MustCompile(`[0-9]+`)
 
-// Helper to process the "Pipe" formula logic
+// Helper to process the "Pipe" formula logic safely
 func processCustomFormula(val string, formula string) string {
 	if formula == "" {
 		return val
 	}
 
-	// Split by pipe "|"
-	ops := strings.Split(formula, "|")
+	// Split by pipe "|" only when NOT inside quotes
+	var ops []string
+	var cur strings.Builder
+	inSingle := false
+	inDouble := false
+
+	for i := 0; i < len(formula); i++ {
+		ch := formula[i]
+		if ch == '\'' && !inDouble {
+			inSingle = !inSingle
+			cur.WriteByte(ch)
+		} else if ch == '"' && !inSingle {
+			inDouble = !inDouble
+			cur.WriteByte(ch)
+		} else if ch == '|' && !inSingle && !inDouble {
+			part := strings.TrimSpace(cur.String())
+			if part != "" {
+				ops = append(ops, part)
+			}
+			cur.Reset()
+		} else {
+			cur.WriteByte(ch)
+		}
+	}
+	if part := strings.TrimSpace(cur.String()); part != "" {
+		ops = append(ops, part)
+	}
 
 	for _, op := range ops {
 		op = strings.TrimSpace(op)
@@ -120,7 +145,7 @@ func processCustomFormula(val string, formula string) string {
 
 // RunScraper executes the scraping job based on the provided config
 func RunScraper(config ScraperConfig, projectName string, logCallback func(string)) {
-	logCallback("🚀 Engine Started: " + config.Meta.URL)
+	logCallback("Engine Started: " + config.Meta.URL)
 
 	outName := config.Output.Filename
 	if outName == "" {
@@ -133,7 +158,7 @@ func RunScraper(config ScraperConfig, projectName string, logCallback func(strin
 
 	file, err := os.Create(outputPath)
 	if err != nil {
-		logCallback(fmt.Sprintf("❌ Error creating file: %s", err))
+		logCallback(fmt.Sprintf("Error creating file: %s", err))
 		return
 	}
 	defer file.Close()
@@ -141,7 +166,7 @@ func RunScraper(config ScraperConfig, projectName string, logCallback func(strin
 	writer := csv.NewWriter(file) // ponytail: stdlib csv, comma delimiter
 	defer writer.Flush()
 
-    var csvMutex sync.Mutex
+	var csvMutex sync.Mutex
 
 	var headers []string
 	for _, f := range config.Fields {
@@ -161,38 +186,38 @@ func RunScraper(config ScraperConfig, projectName string, logCallback func(strin
 		for _, field := range config.Fields {
 			var val string
             
-            if field.Selector == "" {
-                if field.Attr == "text" {
-                    val = e.Text
-                } else if field.Attr == "href" {
-                    val = e.Attr("href")
-                } else if field.Attr == "src" {
-                    val = e.Attr("src")
-                } else {
-                    val = e.Attr(field.Attr) // Custom attr on self
-                }
-            } else {
-                if field.Attr == "none" {
-                    if strings.Contains(field.Selector, "::attr(") {
-                        parts := strings.Split(field.Selector, "::attr(")
-                        if len(parts) == 2 {
-                            realSelector := strings.TrimSpace(parts[0])
-                            attrName := strings.TrimSuffix(parts[1], ")")
-                            val = e.ChildAttr(realSelector, attrName)
-                        }
-                    } else {
-                        val = e.ChildText(field.Selector)
-                    }
-                } else if field.Attr == "text" {
-                    val = e.ChildText(field.Selector)
-                } else if field.Attr == "href" {
-                    val = e.ChildAttr(field.Selector, "href")
-                } else if field.Attr == "src" {
-                    val = e.ChildAttr(field.Selector, "src")
-                } else {
-                    val = e.ChildAttr(field.Selector, field.Attr)
-                }
-            }
+			if field.Selector == "" {
+				if field.Attr == "text" {
+					val = e.Text
+				} else if field.Attr == "href" {
+					val = e.Attr("href")
+				} else if field.Attr == "src" {
+					val = e.Attr("src")
+				} else {
+					val = e.Attr(field.Attr) // Custom attr on self
+				}
+			} else {
+				if field.Attr == "none" {
+					if strings.Contains(field.Selector, "::attr(") {
+						parts := strings.Split(field.Selector, "::attr(")
+						if len(parts) == 2 {
+							realSelector := strings.TrimSpace(parts[0])
+							attrName := strings.TrimSuffix(parts[1], ")")
+							val = e.ChildAttr(realSelector, attrName)
+						}
+					} else {
+						val = e.ChildText(field.Selector)
+					}
+				} else if field.Attr == "text" {
+					val = e.ChildText(field.Selector)
+				} else if field.Attr == "href" {
+					val = e.ChildAttr(field.Selector, "href")
+				} else if field.Attr == "src" {
+					val = e.ChildAttr(field.Selector, "src")
+				} else {
+					val = e.ChildAttr(field.Selector, field.Attr)
+				}
+			}
 
 			// --- FILTER LOGIC ---
 			switch field.Filter {
@@ -215,13 +240,13 @@ func RunScraper(config ScraperConfig, projectName string, logCallback func(strin
 			row = append(row, val)
 		}
 
-        csvMutex.Lock()
+		csvMutex.Lock()
 		writer.Write(row)
 		itemCount++
-        if itemCount % 10 == 0 {
-            writer.Flush()
-        }
-        csvMutex.Unlock()
+		if itemCount % 10 == 0 {
+			writer.Flush()
+		}
+		csvMutex.Unlock()
 	})
 
 	// Pagination
@@ -231,7 +256,7 @@ func RunScraper(config ScraperConfig, projectName string, logCallback func(strin
 		limit := config.Pagination.Limit
 		if limit == 0 { limit = 1 }
 
-		logCallback(fmt.Sprintf("🔄 Looping Pages 1 to %d", limit))
+		logCallback(fmt.Sprintf("Looping Pages 1 to %d", limit))
 		separator := "?"
 		if strings.Contains(config.Meta.URL, "?") { separator = "&" }
 
@@ -260,6 +285,6 @@ func RunScraper(config ScraperConfig, projectName string, logCallback func(strin
 	}
 
 	c.Wait()
-	logCallback(fmt.Sprintf("✅ DONE! Scraped %d items.", itemCount))
-	logCallback(fmt.Sprintf("💾 Saved to: %s", outputPath))
+	logCallback(fmt.Sprintf("DONE! Scraped %d items.", itemCount))
+	logCallback(fmt.Sprintf("Saved to: %s", outputPath))
 }
